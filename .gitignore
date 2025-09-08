@@ -31,4 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Игнорируем все скрипты
+*.py
+*.ps1
+scripts/
+
 src/main/resources/scripts/

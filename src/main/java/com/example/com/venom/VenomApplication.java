@@ -2,32 +2,27 @@ package com.example.com.venom;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Component;
-
 import java.io.File;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
 
 @SpringBootApplication
+@EntityScan("com.example.com.venom.entity")
+@EnableJpaRepositories("com.example.com.venom.repository")
 public class VenomApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(VenomApplication.class, args);
     }
 
-    
-
     @Component
 public static class ServerInfoPrinter implements ApplicationListener<WebServerInitializedEvent> {
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
         try {
-            int port = event.getWebServer().getPort();
-            String ip = getLocalNetworkIp();
 
             System.out.println("\n✅ Сервер запущен!");
             System.out.println("Вызов скрипта...");
@@ -66,23 +61,5 @@ public static class ServerInfoPrinter implements ApplicationListener<WebServerIn
             System.err.println("❌ Ошибка при запуске Python-скрипта: " + e.getMessage());
         }
     }
-
-    private String getLocalNetworkIp() throws Exception {
-        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-        while (interfaces.hasMoreElements()) {
-            NetworkInterface iface = interfaces.nextElement();
-            if (iface.isLoopback() || !iface.isUp()) continue;
-
-            Enumeration<InetAddress> addresses = iface.getInetAddresses();
-            while (addresses.hasMoreElements()) {
-                InetAddress addr = addresses.nextElement();
-                if (addr instanceof Inet4Address) {
-                    return addr.getHostAddress();
-                }
-            }
-        }
-        return "127.0.0.1";
-    }
 }
-
 }

@@ -1,31 +1,34 @@
 package com.example.com.venom.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.example.com.venom.dto.UserRequest;
-import java.util.HashMap;
-import java.util.Map;
+import com.example.com.venom.entity.AccountEntity;
+import com.example.com.venom.repository.AccountRepository;
+import java.util.List;
 
 @RestController
 public class UserController {
 
-    @PostMapping(value = "/api/users", produces = "application/json")
-    public ResponseEntity<Map<String, String>> createUser(@RequestBody UserRequest userRequest) {
-        System.out.println("Получено сообщение от клиента: " + userRequest.getMessage());
+    @Autowired
+    private AccountRepository accountRepository;
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Сообщение '" + userRequest.getMessage() + "' успешно получено сервером!");
-        return ResponseEntity.ok(response);
+    @PostMapping("/api/accounts")
+    public ResponseEntity<AccountEntity> createAccount(@RequestBody AccountEntity account) {
+        AccountEntity savedAccount = accountRepository.save(account);
+        return ResponseEntity.ok(savedAccount);
     }
 
-    @GetMapping("/test/ping")
-    public String ping() {
-        return "pong";
+    @GetMapping("/api/accounts")
+    public ResponseEntity<List<AccountEntity>> getAllAccounts() {
+        List<AccountEntity> accounts = accountRepository.findAll();
+        return ResponseEntity.ok(accounts);
     }
 
-    @GetMapping("")
-    public String showInfo(){
-        return "Hello World";
+    @GetMapping("/api/accounts/{id}")
+    public ResponseEntity<AccountEntity> getAccount(@PathVariable Long id) {
+        return accountRepository.findById(id)
+                .map(account -> ResponseEntity.ok(account))
+                .orElse(ResponseEntity.notFound().build());
     }
-}
-
+}   
