@@ -10,7 +10,7 @@ public class TestController {
         return "pong";
     }
 
-    @GetMapping("")
+    @GetMapping("/")
     public String showInfo(){
         return "Hello World";
     }    

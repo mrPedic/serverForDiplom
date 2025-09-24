@@ -5,7 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.com.venom.entity.AccountEntity;
 import com.example.com.venom.repository.AccountRepository;
-import java.util.List;
+
+import java.util.Optional;
 
 @RestController
 public class UserController {
@@ -13,22 +14,73 @@ public class UserController {
     @Autowired
     private AccountRepository accountRepository;
 
-    @PostMapping("/api/accounts")
-    public ResponseEntity<AccountEntity> createAccount(@RequestBody AccountEntity account) {
-        AccountEntity savedAccount = accountRepository.save(account);
-        return ResponseEntity.ok(savedAccount);
+    //==================================    Получение своих данных    ==================================
+    @GetMapping("/user/me")
+    public ResponseEntity<?> GetMe(@RequestParam("id") Long id){
+        Optional<AccountEntity> existing = accountRepository.findById(id);
+        if (existing.isPresent()) {
+            return ResponseEntity.ok(existing.get());
+        } else {
+            return ResponseEntity.badRequest().body("Пользователя с таким id не существует");
+        }
     }
 
-    @GetMapping("/api/accounts")
-    public ResponseEntity<List<AccountEntity>> getAllAccounts() {
-        List<AccountEntity> accounts = accountRepository.findAll();
-        return ResponseEntity.ok(accounts);
+    //==================================    Обновление данных пользователя    ==================================
+    @PutMapping("/user/me")
+    public ResponseEntity<?> UpdateMe(@RequestBody AccountEntity accountEntity){
+        Optional<AccountEntity> existing = accountRepository.findById(accountEntity.getId());
+        if (existing.isPresent()) {
+            AccountEntity accountToUpdate = existing.get();
+
+            if (accountEntity.getLogin() != null) {
+                accountToUpdate.setLogin(accountEntity.getLogin());
+            }
+            if (accountEntity.getEmail() != null) {
+                accountToUpdate.setEmail(accountEntity.getEmail());
+            }
+            if (accountEntity.getRole() != null) {
+                accountToUpdate.setRole(accountEntity.getRole());
+            }
+            if (accountEntity.getName() != null) {
+                accountToUpdate.setName(accountEntity.getName());
+            }
+            accountRepository.save(accountToUpdate);
+
+            return ResponseEntity.ok().body("Данные успешно обновлены");
+        } else {
+            return ResponseEntity.badRequest().body("Пользователя с таким id не существует");
+        }
     }
 
-    @GetMapping("/api/accounts/{id}")
-    public ResponseEntity<AccountEntity> getAccount(@PathVariable Long id) {
-        return accountRepository.findById(id)
-                .map(account -> ResponseEntity.ok(account))
-                .orElse(ResponseEntity.notFound().build());
+    //==================================    Обновление пароля пользователя    ==================================
+    @PutMapping("/user/me/password")
+    public ResponseEntity<?> UpdateMePassword(@RequestBody AccountEntity accountEntity){
+        Optional<AccountEntity> existing = accountRepository.findById(accountEntity.getId());
+        if (existing.isPresent()) {
+            AccountEntity accountToUpdate = existing.get();
+
+            if(accountEntity.getPassword() != null){
+                accountToUpdate.setPassword(accountEntity.getPassword());
+            }
+
+            accountRepository.save(accountToUpdate);
+
+            return ResponseEntity.ok().body("Данные успешно обновлены");
+        } else {
+            return ResponseEntity.badRequest().body("Пользователя с таким id не существует");
+        }
     }
-}   
+
+    //==================================    Удаление пользователя по id    ==================================
+    @DeleteMapping("/user/me")
+    public ResponseEntity<?> DeleteById (@RequestParam("id") Long id){
+        Optional<AccountEntity> existing = accountRepository.findById(id);
+        if(existing.isPresent()){
+            accountRepository.delete(existing.get());
+            return ResponseEntity.ok().body("Пользователь с таким id был удален");
+        }
+        else{
+            return ResponseEntity.badRequest().body("Не удалось нати пользователя с таким id");
+        }
+    }
+}

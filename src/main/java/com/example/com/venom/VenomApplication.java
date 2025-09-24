@@ -7,6 +7,7 @@ import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import java.io.File;
 
 @SpringBootApplication
@@ -19,6 +20,7 @@ public class VenomApplication {
     }
 
     @Component
+    @ConditionalOnProperty(name = "venom.scripts.enabled", havingValue = "true", matchIfMissing = true)
 public static class ServerInfoPrinter implements ApplicationListener<WebServerInitializedEvent> {
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {

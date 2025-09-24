@@ -1,0 +1,3 @@
+
+// ngrok http http://localhost:8080 - для запуска ngrok  через командную строку
+//docker run --name hybernate-postgres -p 5432:5432 -e POSTGRES_PASSWORD=root -d postgres <- команда для запуска докер контейнера
