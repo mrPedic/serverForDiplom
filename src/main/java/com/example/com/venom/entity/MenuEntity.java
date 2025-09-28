@@ -16,9 +16,10 @@ public class MenuEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private Long restaurantId;
 
+    // Храним всё меню в JSONB
     @Column(columnDefinition = "jsonb")
-    private String menuJson; // Храним всё меню в JSON
+    private String menuJson;
 }
