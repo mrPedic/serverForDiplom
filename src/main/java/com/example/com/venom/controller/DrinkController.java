@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 import com.example.com.venom.entity.DrinkEntity;
 import com.example.com.venom.repository.DrinkRepository;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/drinks")
 @RequiredArgsConstructor
@@ -14,11 +16,27 @@ public class DrinkController {
 
     private final DrinkRepository drinkRepository;
 
+    // Создать новый напиток
     @PostMapping
     public ResponseEntity<DrinkEntity> createDrink(@RequestBody DrinkEntity drink) {
         return ResponseEntity.ok(drinkRepository.save(drink));
     }
 
+    // Получить список всех напитков
+    @GetMapping
+    public ResponseEntity<List<DrinkEntity>> getAllDrinks() {
+        return ResponseEntity.ok(drinkRepository.findAll());
+    }
+
+    // Получить напиток по ID
+    @GetMapping("/{id}")
+    public ResponseEntity<DrinkEntity> getDrinkById(@PathVariable Long id) {
+        return drinkRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Обновить напиток
     @PutMapping("/{id}")
     public ResponseEntity<DrinkEntity> updateDrink(
             @PathVariable Long id,
@@ -34,9 +52,13 @@ public class DrinkController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // Удалить напиток
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDrink(@PathVariable Long id) {
-        drinkRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        if (drinkRepository.existsById(id)) {
+            drinkRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }
