@@ -1,5 +1,6 @@
 package com.example.com.venom.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,5 +18,8 @@ public interface EstablishmentRepository extends JpaRepository<EstablishmentEnti
     // ⭐ ИСПРАВЛЕНО: Таблица "establishment" заменена на "establishments"
     @Query(value = "SELECT * FROM establishments WHERE LOWER(\"name\") LIKE LOWER(CONCAT('%', :name, '%')) LIMIT 1", nativeQuery = true)
     Optional<EstablishmentEntity> findByName(@Param("name") String name);
+
+    @Query(value = "SELECT * FROM establishments WHERE \"created_user_id\" = :created_user_id", nativeQuery = true)
+    List<EstablishmentEntity> findByCreatedUserId(@Param ("created_user_id")Long userId);
 
 }

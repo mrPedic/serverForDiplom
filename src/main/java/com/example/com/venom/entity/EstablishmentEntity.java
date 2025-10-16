@@ -3,9 +3,8 @@ package com.example.com.venom.entity;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import jakarta.persistence.Column;
+import jakarta.persistence.Column; // Оставляем импорт, так как он может использоваться в других методах
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -36,16 +35,15 @@ public class EstablishmentEntity {
 
     private Long idMenu; // ID меню
 
+    @Column(name = "created_user_id")
     private Long createdUserId;
 
     @Enumerated(EnumType.STRING) // Сохраняем ENUM как строку
     private EstablishmentStatus status; // ⭐ ДОБАВЛЕНО ПОЛЕ СТАТУСА
 
     @Column(name="date")
-    @JsonIgnore
-    // ⭐ ЯВНОЕ УКАЗАНИЕ ФОРМАТА: 
-    // Гарантирует, что дата будет сериализована как строка "yyyy-MM-dd", 
-    // обходя возможные проблемы конфигурации на клиенте.
+    // ⭐ УДАЛЕНИЕ @JsonIgnore: теперь используем DTO для контроля вывода данных,
+    // что позволяет нам избежать конфликтов при операциях PUT/GET.
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate dateOfCreation = LocalDate.now(); // Инициализируем текущей датой
 
@@ -56,27 +54,39 @@ public class EstablishmentEntity {
     // Конструктор по умолчанию (требуется JPA)
     public EstablishmentEntity() {}
 
-    // Конструктор для создания нового заведения (ИСПРАВЛЕН)
+    /**
+     * Конструктор для создания нового заведения.
+     * @param name Название заведения.
+     * @param latitude Широта.
+     * @param longitude Долгота.
+     * @param address Адрес.
+     * @param description Описание.
+     * @param createdUserId ID пользователя, создавшего заведение.
+     */
     public EstablishmentEntity(
             String name,
             Double latitude,
             Double longitude,
             String address,
             String description,
-            Long createdUserId) // ⭐ ДОБАВЛЕН СТАТУС
+            Long createdUserId) 
     {
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
         this.address = address;
         this.description = description;
+        
+        // --- Фиксированные значения для нового заведения ---
         this.rating = 0.0;
         this.dateOfCreation = LocalDate.now();
-        // ID меню должен быть установлен после сохранения, или через отдельный сервис, 
-        // поэтому не устанавливаем его здесь, как это делалось ошибочно с this.id
-        this.idMenu = null; 
+        this.idMenu = this.id; 
+        
+        // ⭐ КРИТИЧЕСКИ ВАЖНОЕ ПОЛЕ
         this.createdUserId = createdUserId;
-        this.status = status = EstablishmentStatus.PENDING_APPROVAL; // Устанавливаем статус
+        
+        // ⭐ ОЧИЩЕННАЯ ИНИЦИАЛИЗАЦИЯ СТАТУСА
+        this.status = EstablishmentStatus.PENDING_APPROVAL; 
     }
     
     // ----------------------------------------------------------------------
@@ -147,7 +157,7 @@ public class EstablishmentEntity {
         this.dateOfCreation = dateOfCreation;
     }
 
-    // ⭐ ДОБАВЛЕНЫ ГЕТТЕРЫ И СЕТТЕРЫ ДЛЯ ID MENU И CREATED USER ID
+    // ⭐ ГЕТТЕРЫ И СЕТТЕРЫ ДЛЯ ID MENU И CREATED USER ID
     public Long getIdMenu() {
         return idMenu;
     }
@@ -164,7 +174,7 @@ public class EstablishmentEntity {
         this.createdUserId = createdUserId;
     }
 
-    // ⭐ ДОБАВЛЕНЫ ГЕТТЕРЫ И СЕТТЕРЫ ДЛЯ СТАТУСА
+    // ⭐ ГЕТТЕРЫ И СЕТТЕРЫ ДЛЯ СТАТУСА
     public EstablishmentStatus getStatus() {
         return status;
     }
@@ -173,4 +183,3 @@ public class EstablishmentEntity {
         this.status = status;
     }
 }
-
