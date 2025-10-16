@@ -9,9 +9,9 @@ import java.util.Optional;
 
 public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
 
-	@Query(value = "SELECT * FROM users WHERE \"Login\" = :login LIMIT 1", nativeQuery = true)
+	@Query(value = "SELECT * FROM users WHERE \"login\" = :login LIMIT 1", nativeQuery = true)
 	Optional<AccountEntity> findByLogin(@Param("login") String login);
 
-	@Query(value = "SELECT * FROM users WHERE \"Login\" = :login AND \"Password\" = :password LIMIT 1", nativeQuery = true)
+	@Query(value = "SELECT * FROM users WHERE \"login\" = :login AND \"password\" = :password LIMIT 1", nativeQuery = true)
 	Optional<AccountEntity> findByLoginAndPassword(@Param("login") String login, @Param("password") String password);
 }

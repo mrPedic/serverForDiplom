@@ -3,11 +3,311 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Venom Server</title>
+    <style>
+        :root {
+            --bg: #0f1226;
+            --bg-soft: #15193a;
+            --card: #1b214d;
+            --text: #e7eaf6;
+            --muted: #aab2d5;
+            --primary: #7c5cff;
+            --primary-700: #6a49ff;
+            --accent: #19c37d;
+            --danger: #ff5d5d;
+            --shadow: 0 10px 30px rgba(0,0,0,0.35);
+            --radius: 14px;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            color: var(--text);
+            background:
+                radial-gradient(1200px 600px at 10% -10%, #2b3270 0%, transparent 60%),
+                radial-gradient(1000px 500px at 110% 10%, #2b3270 0%, transparent 60%),
+                linear-gradient(180deg, var(--bg) 0%, #0e1022 100%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 18px;
+            background: color-mix(in oklab, var(--bg-soft) 80%, black 0%);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: calc(var(--radius) - 6px);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(6px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .logo {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            box-shadow: 0 6px 16px rgba(124, 92, 255, 0.45), inset 0 0 12px rgba(255,255,255,0.2);
+        }
+
+        nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #121631;
+            color: var(--muted);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 999px;
+            text-decoration: none;
+            transition: transform .18s ease, background .18s ease, color .18s ease;
+        }
+
+        .pill:hover {
+            transform: translateY(-2px);
+            background: #0f1430;
+            color: var(--text);
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 28px;
+            margin-top: 28px;
+        }
+
+        .card {
+            background: linear-gradient(180deg, color-mix(in oklab, var(--card) 90%, black 0%), color-mix(in oklab, #161a3c 90%, black 0%));
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 28px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 10px;
+            font-size: 12px;
+            letter-spacing: 0.3px;
+            background: rgba(124,92,255,0.16);
+            color: #cbbcff;
+            border: 1px solid rgba(124,92,255,0.35);
+            border-radius: 999px;
+        }
+
+        h1 {
+            margin: 12px 0 10px;
+            font-size: 40px;
+            line-height: 1.15;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 22px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: linear-gradient(180deg, var(--primary), var(--primary-700));
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 10px 20px rgba(124,92,255,0.35);
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+        }
+
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+
+        .btn.secondary {
+            background: linear-gradient(180deg, #1f2558, #181d48);
+            color: var(--text);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .tile {
+            background: linear-gradient(180deg, #182050, #141a44);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .tile h3 { margin: 0 0 6px; font-size: 16px; }
+        .tile p { margin: 0; color: var(--muted); font-size: 14px; }
+
+        .endpoints {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .endpoint {
+            display: grid;
+            grid-template-columns: 110px 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 12px;
+            background: #0f1430;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+        }
+
+        .method { font-weight: 700; color: #9fe870; }
+        .method.post { color: #57d1ff; }
+        .method.put { color: #ffd166; }
+        .method.delete { color: var(--danger); }
+
+        .try {
+            font-size: 13px;
+            color: var(--muted);
+            text-decoration: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: #121631;
+        }
+
+        footer {
+            margin: 28px 0 10px;
+            color: var(--muted);
+            text-align: center;
+            font-size: 13px;
+        }
+
+        @media (max-width: 900px) {
+            .hero { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
-    <a>
-        Hello world
-    </a>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <div class="logo"></div>
+                <div>Venom Server</div>
+            </div>
+            <nav>
+                <a class="pill" href="#features">Features</a>
+                <a class="pill" href="#api">API</a>
+                <a class="pill" href="#about">About</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <div class="card">
+                <span class="badge">Java • Spring Boot</span>
+                <h1>Welcome to your Venom backend</h1>
+                <p class="subtitle">A clean landing page for your server with quick access to common endpoints. Use it while developing, or keep it as a lightweight home page in production.</p>
+                <div class="actions">
+                    <a class="btn" href="/establishments" target="_blank" rel="noopener">View establishments</a>
+                    <a class="btn secondary" href="/hello.html">Refresh</a>
+                </div>
+
+                <div id="features" class="grid">
+                    <div class="tile">
+                        <h3>Fast</h3>
+                        <p>Lightweight, responsive, and self-contained styling.</p>
+                    </div>
+                    <div class="tile">
+                        <h3>Practical</h3>
+                        <p>Links to frequently used API endpoints during development.</p>
+                    </div>
+                    <div class="tile">
+                        <h3>Secure by default</h3>
+                        <p>No external fonts or scripts. Easy to host.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="api" class="card">
+                <h2 style="margin: 0 0 8px;">API endpoints</h2>
+                <p class="subtitle" style="margin: 0 0 10px;">Explore some core routes exposed by your server.</p>
+                <div class="endpoints">
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <code>/establishments</code>
+                        <a class="try" href="/establishments" target="_blank" rel="noopener">Try</a>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <code>/establishments/{id}</code>
+                        <a class="try" href="/establishments/1" target="_blank" rel="noopener">Try</a>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <code>/establishments/{id}/menu</code>
+                        <a class="try" href="/establishments/1/menu" target="_blank" rel="noopener">Try</a>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <code>/establishments</code>
+                        <a class="try" href="#" onclick="alert('Use a REST client to POST JSON'); return false;">How?</a>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method put">PUT</div>
+                        <code>/establishments/{id}</code>
+                        <a class="try" href="#" onclick="alert('Use a REST client to PUT JSON'); return false;">How?</a>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method delete">DELETE</div>
+                        <code>/establishments/{id}</code>
+                        <a class="try" href="#" onclick="alert('Use a REST client to DELETE'); return false;">How?</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- <footer id="about">
+            Made with ❤️ for your Spring Boot project. Customize this page in <code>src/main/java/com/example/com/hello.html</code>
+        </footer> -->
+    </div>
 </body>
 </html>

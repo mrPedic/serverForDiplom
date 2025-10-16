@@ -1,6 +1,6 @@
 package com.example.com.venom.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,36 +17,27 @@ public class AccountEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonProperty("Id")
-    @Column(name = "Id")
+    @Column(name = "id")
     private Long id;
 
-    @JsonProperty("Name")
-    @Column(name = "Name")
+    @Column(name = "name")
     private String name;
 
-    @JsonProperty("Login")
-    @Column(name = "Login")
+    @Column(name = "login")
     private String login;
 
-    @JsonProperty("Password")
-    @Column(name = "Password")
+    @Column(name = "password")
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @JsonProperty("Role")
-    @Column(name = "Role")
+    @Column(name = "role")
     private Role role;
 
-    @Column(name = "Email", unique = true)
-    @JsonProperty("Email")
+    @Column(name = "email", unique = true)
     private String email;
 
-    public void setId(Long id) { this.id = id; }
-
-    public void setEmail(String email) { this.email = email; }
-
-    public String getEmail() { return email; }
+    @Column(name="date")
+    private LocalDate dateOfCreation = LocalDate.now();
 
     public AccountEntity() {
         this.name = "Default_Name";
@@ -61,15 +52,21 @@ public class AccountEntity {
     }
 
     public Long getId(){ return this.id; }
-
     public String getLogin() { return login; }
     public void setLogin(String login) { this.login = login; }
     public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
     public Role getRole() { return role; }
+    public String getPassword() { return password; }
+    public String getEmail() { return email; }
+    public LocalDate getDate(){return dateOfCreation;}
+
+
+    public void setEmail(String email) { this.email = email; }
+    public void setId(Long id){this.id = id;}
+    public void setName(String name) { this.name = name; }
+    public void setPassword(String password) { this.password = password; }
     public void setRole(Role role) { this.role = role; }
+    public void setDateCreation(LocalDate date){this.dateOfCreation = date;}
 
     public enum Role{
         Registered,
@@ -77,5 +74,4 @@ public class AccountEntity {
         AdminOfInstitution,
         AdminOfApp
     }
-
 }

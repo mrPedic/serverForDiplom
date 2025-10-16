@@ -1,5 +1,7 @@
 package com.example.com.venom;
 
+import java.io.File;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -8,7 +10,6 @@ import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Component;
-import java.io.File;
 
 @SpringBootApplication
 @EntityScan("com.example.com.venom.entity")
@@ -17,6 +18,7 @@ public class VenomApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(VenomApplication.class, args);
+        
     }
 
     // ⭐ ИЗМЕНЕНИЕ ЗДЕСЬ: Класс запускается только при venom.mode=global
