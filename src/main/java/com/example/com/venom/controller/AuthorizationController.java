@@ -39,7 +39,7 @@ public class AuthorizationController {
     @PostMapping("/auth/login")
     public ResponseEntity<?> Login(@RequestBody Map<String, String> request ){
         String login = request.get("login");
-        String password = request.get("login");
+        String password = request.get("password");
 
         Optional<AccountEntity> userOptional = accountRepository.findByLoginAndPassword(login,password);
         if(userOptional.isPresent()){
@@ -48,5 +48,10 @@ public class AuthorizationController {
         else{
             return ResponseEntity.status(401).body("Неверный логин или пароль");
         }
+    }
+
+    @PostMapping("/auth/getAllUsers")
+    public ResponseEntity<?> getAll() {
+        return ResponseEntity.ok(accountRepository.findAll());
     }
 }
