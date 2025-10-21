@@ -5,11 +5,20 @@ import java.util.Optional;
 import java.util.stream.Collectors; // Для маппинга списка
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.com.venom.dto.EstablishmentCreationRequest;
 import com.example.com.venom.dto.EstablishmentDisplayDto; 
 import com.example.com.venom.entity.EstablishmentEntity;
+import com.example.com.venom.entity.EstablishmentStatus;
 import com.example.com.venom.repository.EstablishmentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -78,6 +87,23 @@ public class EstablishmentController {
         return ResponseEntity.ok(dtoList);
     }
 
+    // ========================== Поиск заведений ==========================
+    @GetMapping("/search")
+    public ResponseEntity<List<EstablishmentDisplayDto>> searchEstablishments(@RequestParam String query) {
+        
+        // Используем новый метод репозитория для поиска по названию ИЛИ адресу
+        List<EstablishmentEntity> foundEntities = 
+            establishmentRepository.findByNameContainingIgnoreCaseOrAddressContainingIgnoreCase(query, query);
+            
+        // МАППИНГ
+        List<EstablishmentDisplayDto> dtoList = foundEntities.stream()
+            .map(EstablishmentDisplayDto::fromEntity)
+            .collect(Collectors.toList());
+            
+        // Возвращаем 200 OK
+        return ResponseEntity.ok(dtoList);
+    }
+
     // ========================== Получение заведения по ID (ОБНОВЛЕНО) ==========================
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id) {
@@ -112,5 +138,55 @@ public class EstablishmentController {
                 return ResponseEntity.ok("Заведение успешно удалено");
             })
             .orElse(ResponseEntity.badRequest().body("Заведение с таким id не найдено"));
+    }
+
+    // ========================== ⭐ НОВАЯ КОНЕЧНАЯ ТОЧКА: Одобрение заведения ==========================
+    // Принимает ID заведения и новый статус в теле запроса (или в параметре).
+    // Для простоты будем использовать PUT, который меняет только статус.
+    @PutMapping("/{id}/status")
+        public ResponseEntity<?> updateEstablishmentStatus(
+            @PathVariable Long id, 
+            @RequestParam String status // <-- Изменили тип на String
+        ) {
+    Optional<EstablishmentEntity> optionalEntity = establishmentRepository.findById(id);
+
+    if (optionalEntity.isEmpty()) {
+        return ResponseEntity.badRequest().body("Заведение с таким id не найдено");
+    }
+
+    EstablishmentEntity existing = optionalEntity.get();
+    
+    // --- ⭐ ВАЖНОЕ ИЗМЕНЕНИЕ: ВРУЧНУЮ ПРЕОБРАЗУЕМ СТРОКУ В ENUM ---
+    EstablishmentStatus newStatus;
+    try {
+    newStatus = EstablishmentStatus.valueOf(status.toUpperCase()); 
+} catch (IllegalArgumentException e) {
+    // 🔥 Если сработал этот блок, сервер вернет 400
+    return ResponseEntity.badRequest().body("Недопустимое значение статуса: " + status);
+}
+    // -----------------------------------------------------------
+    
+    // Обновляем статус
+    existing.setStatus(newStatus); // Используем преобразованный ENUM
+    
+    // Сохраняем изменения
+    EstablishmentEntity updatedEntity = establishmentRepository.save(existing);
+    
+    // Возвращаем Display DTO
+    return ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(updatedEntity));
+}
+    
+    // ========================== ⭐ НОВАЯ КОНЕЧНАЯ ТОЧКА: Получение неодобренных (PENDING) ==========================
+    @GetMapping("/pending")
+    public ResponseEntity<List<EstablishmentDisplayDto>> getPendingEstablishments() {
+        // Используем новый метод репозитория
+        List<EstablishmentEntity> pendingEntities = 
+            establishmentRepository.findByStatus(EstablishmentStatus.PENDING_APPROVAL);
+
+        List<EstablishmentDisplayDto> dtoList = pendingEntities.stream()
+            .map(EstablishmentDisplayDto::fromEntity)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtoList);
     }
 }

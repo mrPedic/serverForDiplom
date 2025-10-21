@@ -23,6 +23,7 @@ public class EstablishmentEntity {
 
     private String name;
 
+
     private Double latitude;
 
     private Double longitude;
@@ -38,7 +39,8 @@ public class EstablishmentEntity {
     @Column(name = "created_user_id")
     private Long createdUserId;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING) // <-- Указывает Hibernate использовать строковое имя ENUM
+    @Column(name = "status", nullable = false)
     private EstablishmentStatus status;
 
     // ⭐ НОВОЕ ПОЛЕ ТИПА
