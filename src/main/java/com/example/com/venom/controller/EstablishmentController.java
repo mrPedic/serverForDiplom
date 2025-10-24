@@ -30,36 +30,6 @@ public class EstablishmentController {
 
     private final EstablishmentRepository establishmentRepository;
 
-    
-    // ========================== Создание заведения (ОБНОВЛЕНО) ==========================
-    @PostMapping("/create")
-    public ResponseEntity<?> register(@RequestBody EstablishmentCreationRequest request) {
-        String name = request.getName();
-        String address = request.getAddress();
-
-        // Проверяем наличие
-        Optional<EstablishmentEntity> existing = establishmentRepository.findByNameAndAddress(name, address);
-        if (existing.isPresent()) {
-            return ResponseEntity.badRequest().body("Заведение с таким названием и адресом уже существует");
-        }
-    
-        // Создаем сущность из DTO (ОБНОВЛЕННЫЙ КОНСТРУКТОР)
-        EstablishmentEntity newEstablishmentEntity = new EstablishmentEntity(
-            request.getName(),
-            request.getLatitude(),
-            request.getLongitude(),
-            request.getAddress(),
-            request.getDescription(),
-            request.getCreatedUserId(),
-            request.getType() // ⭐ ПЕРЕДАЕМ ТИП ИЗ ЗАПРОСА
-        );
-    
-        EstablishmentEntity savedEntity = establishmentRepository.save(newEstablishmentEntity);
-        
-        // Возвращаем клиенту Display DTO
-        return ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(savedEntity));
-    }
-
     // ⭐ НОВАЯ КОНЕЧНАЯ ТОЧКА: Получение заведений по ID пользователя (ОБНОВЛЕНО)
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<EstablishmentDisplayDto>> findByUserId(@PathVariable Long userId) {
@@ -113,16 +83,56 @@ public class EstablishmentController {
             .orElse(ResponseEntity.badRequest().body("Заведения с таким id не существует"));
     }
 
+    @PostMapping("/create")
+    public ResponseEntity<?> register(@RequestBody EstablishmentCreationRequest request) {
+        String name = request.getName();
+        String address = request.getAddress();
+
+        // Проверяем наличие
+        Optional<EstablishmentEntity> existing = establishmentRepository.findByNameAndAddress(name, address);
+        if (existing.isPresent()) {
+            return ResponseEntity.badRequest().body("Заведение с таким названием и адресом уже существует");
+        }
+    
+        // Создаем сущность из DTO
+        EstablishmentEntity newEstablishmentEntity = new EstablishmentEntity(
+            request.getName(),
+            request.getLatitude(),
+            request.getLongitude(),
+            request.getAddress(),
+            request.getDescription(),
+            request.getCreatedUserId(),
+            request.getType(),
+            request.getPhotoBase64s() // ⭐ ПЕРЕДАЕМ НЕОБЯЗАТЕЛЬНЫЙ СПИСОК ФОТО
+        );
+    
+        EstablishmentEntity savedEntity = establishmentRepository.save(newEstablishmentEntity);
+        
+        // Возвращаем клиенту Display DTO
+        return ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(savedEntity));
+    }
+
+
     // ========================== Обновление заведения (ОБНОВЛЕНО) ==========================
-    // Принимаем EstablishmentEntity для простоты PUT, но можно использовать отдельный DTO
     @PutMapping("/{id}")
     public ResponseEntity<?> updateById(@PathVariable Long id, @RequestBody EstablishmentEntity establishmentEntity) {
         return establishmentRepository.findById(id)
             .<ResponseEntity<?>>map(existing -> {
-                // Убеждаемся, что ID в сущности установлен
+                
+                // Сохраняем поля, которые не должны меняться (например, дата создания и ID пользователя)
                 establishmentEntity.setId(id);
-                // (Дополнительная логика для сохранения полей, которые не должны обновляться, опущена)
+                establishmentEntity.setDateOfCreation(existing.getDateOfCreation());
+                establishmentEntity.setCreatedUserId(existing.getCreatedUserId());
+
+                // ⭐ Если входящая сущность НЕ передает фото, мы должны сохранить существующие фото (опционально)
+                // Если клиент всегда посылает все данные, это не нужно. 
+                // Но если клиент шлет только измененные поля, нужно объединить данные.
+                
+                // В данном случае, мы доверяем клиенту и просто сохраняем пришедшую сущность.
+                // Если photoBase64s = null/"" в запросе, он перезапишет старые данные на null.
+                
                 EstablishmentEntity updatedEntity = establishmentRepository.save(establishmentEntity);
+                
                 // Возвращаем Display DTO
                 return ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(updatedEntity));
             })

@@ -1,5 +1,7 @@
 package com.example.com.venom.dto;
 
+import java.util.List;
+
 import com.example.com.venom.entity.EstablishmentType;
 
 import lombok.AllArgsConstructor;
@@ -21,6 +23,7 @@ public class EstablishmentCreationRequest {
     private Long createdUserId;
     private String description;
     private EstablishmentType type;
+    private List<String> photoBase64s;
 }
 
 // Enum EstablishmentStatus не был предоставлен в Java, но он нужен для десериализации клиента.

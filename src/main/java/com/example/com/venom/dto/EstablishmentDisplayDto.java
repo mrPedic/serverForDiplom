@@ -1,6 +1,7 @@
 package com.example.com.venom.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.entity.EstablishmentStatus;
@@ -17,16 +18,18 @@ public class EstablishmentDisplayDto {
     private String name;
     private String description;
     private String address;
-    private Double latitude; // <-- ДОБАВЛЕНО для отображения на карте
-    private Double longitude; // <-- ДОБАВЛЕНО для отображения на карте
+    private Double latitude; 
+    private Double longitude; 
     private Double rating;
     private EstablishmentStatus status;
+    private Long createdUserId; 
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate dateOfCreation;
     
-    // ⭐ НОВОЕ ПОЛЕ ДЛЯ ФРОНТА
     private EstablishmentType type; 
+
+    private List<String> photoBase64s; 
     
     // Метод-фабрика для преобразования Entity в DTO (ОБНОВЛЕН)
     public static EstablishmentDisplayDto fromEntity(EstablishmentEntity entity) {
@@ -35,12 +38,14 @@ public class EstablishmentDisplayDto {
             entity.getName(),
             entity.getDescription(),
             entity.getAddress(),
-            entity.getLatitude(),  // <-- ДОБАВЛЕНО
-            entity.getLongitude(), // <-- ДОБАВЛЕНО
+            entity.getLatitude(),  
+            entity.getLongitude(), 
             entity.getRating(),
             entity.getStatus(),
+            entity.getCreatedUserId(), 
             entity.getDateOfCreation(),
-            entity.getType() // <-- НОВОЕ ПОЛЕ
+            entity.getType(),
+            entity.getPhotoBase64s()
         );
     }
 }

@@ -1,16 +1,20 @@
 package com.example.com.venom.entity;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 
 @Entity
@@ -22,7 +26,6 @@ public class EstablishmentEntity {
     private Long id;
 
     private String name;
-
 
     private Double latitude;
 
@@ -39,17 +42,25 @@ public class EstablishmentEntity {
     @Column(name = "created_user_id")
     private Long createdUserId;
 
-    @Enumerated(EnumType.STRING) // <-- Указывает Hibernate использовать строковое имя ENUM
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private EstablishmentStatus status;
 
-    // ⭐ НОВОЕ ПОЛЕ ТИПА
     @Enumerated(EnumType.STRING)
     private EstablishmentType type; 
 
     @Column(name="date")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate dateOfCreation = LocalDate.now();
+
+    @ElementCollection 
+    @CollectionTable(
+        name = "establishment_photos", 
+        joinColumns = @JoinColumn(name = "establishment_id")
+    )
+    @Column(name = "base64_photo", columnDefinition = "TEXT")
+    private List<String> photoBase64s;
+
 
     // ----------------------------------------------------------------------
     // КОНСТРУКТОРЫ
@@ -59,13 +70,6 @@ public class EstablishmentEntity {
 
     /**
      * Конструктор для создания нового заведения (ОБНОВЛЕН).
-     * @param name Название заведения.
-     * @param latitude Широта.
-     * @param longitude Долгота.
-     * @param address Адрес.
-     * @param description Описание.
-     * @param createdUserId ID пользователя, создавшего заведение.
-     * @param type Тип заведения. // <-- НОВЫЙ ПАРАМЕТР
      */
     public EstablishmentEntity(
             String name,
@@ -74,7 +78,8 @@ public class EstablishmentEntity {
             String address,
             String description,
             Long createdUserId,
-            EstablishmentType type) // <-- НОВЫЙ ПАРАМЕТР
+            EstablishmentType type,
+            List<String> photoBase64s) // ⭐ НОВЫЙ ПАРАМЕТР
     {
         this.name = name;
         this.latitude = latitude;
@@ -85,13 +90,14 @@ public class EstablishmentEntity {
         // --- Фиксированные значения для нового заведения ---
         this.rating = 0.0;
         this.dateOfCreation = LocalDate.now();
-        this.idMenu = null; // Лучше null, чем id, который еще не присвоен!
+        this.idMenu = null; 
         
         this.createdUserId = createdUserId;
         this.status = EstablishmentStatus.PENDING_APPROVAL; 
         
-        // ⭐ ИНИЦИАЛИЗАЦИЯ НОВОГО ПОЛЯ
         this.type = type; 
+        // ⭐ ИНИЦИАЛИЗАЦИЯ НОВОГО ПОЛЯ (может быть null или пустой строкой)
+        this.photoBase64s = photoBase64s; 
     }
     
     // ----------------------------------------------------------------------
@@ -120,8 +126,9 @@ public class EstablishmentEntity {
     public void setCreatedUserId(Long createdUserId) { this.createdUserId = createdUserId; }
     public EstablishmentStatus getStatus() { return status; }
     public void setStatus(EstablishmentStatus status) { this.status = status; }
-    
-    // ⭐ ГЕТТЕРЫ И СЕТТЕРЫ ДЛЯ ТИПА
     public EstablishmentType getType() { return type; }
     public void setType(EstablishmentType type) { this.type = type; }
+    public List<String> getPhotoBase64s() { return photoBase64s; }
+    public void setPhotoBase64s(List<String> photoBase64s) { this.photoBase64s = photoBase64s; }
+
 }
