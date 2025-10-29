@@ -24,8 +24,5 @@ public class EstablishmentCreationRequest {
     private String description;
     private EstablishmentType type;
     private List<String> photoBase64s;
+    private String operatingHoursString; 
 }
-
-// Enum EstablishmentStatus не был предоставлен в Java, но он нужен для десериализации клиента.
-// Предполагаем, что он находится в com.example.com.venom.entity
-

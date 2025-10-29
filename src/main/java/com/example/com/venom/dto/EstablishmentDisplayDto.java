@@ -5,8 +5,8 @@ import java.util.List;
 
 import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.entity.EstablishmentStatus;
-import com.example.com.venom.entity.EstablishmentType; // <-- ИМПОРТ
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.example.com.venom.entity.EstablishmentType;
+import com.fasterxml.jackson.annotation.JsonFormat; // <-- ИМПОРТ
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,8 +30,9 @@ public class EstablishmentDisplayDto {
     private EstablishmentType type; 
 
     private List<String> photoBase64s; 
-    
-    // Метод-фабрика для преобразования Entity в DTO (ОБНОВЛЕН)
+
+    private String operatingHoursString;
+
     public static EstablishmentDisplayDto fromEntity(EstablishmentEntity entity) {
         return new EstablishmentDisplayDto(
             entity.getId(),
@@ -45,7 +46,8 @@ public class EstablishmentDisplayDto {
             entity.getCreatedUserId(), 
             entity.getDateOfCreation(),
             entity.getType(),
-            entity.getPhotoBase64s()
+            entity.getPhotoBase64s(),
+            entity.getOperatingHoursString()
         );
     }
 }

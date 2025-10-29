@@ -16,9 +16,15 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "establishments")
+@Getter // Геттеры для всех полей
+@Setter // Сеттеры для всех полей
+@NoArgsConstructor // Конструктор без аргументов (требуется JPA)
 public class EstablishmentEntity {
 
     @Id
@@ -53,6 +59,7 @@ public class EstablishmentEntity {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate dateOfCreation = LocalDate.now();
 
+    // Коллекция для фото (List<String> — ElementCollection)
     @ElementCollection 
     @CollectionTable(
         name = "establishment_photos", 
@@ -61,74 +68,11 @@ public class EstablishmentEntity {
     @Column(name = "base64_photo", columnDefinition = "TEXT")
     private List<String> photoBase64s;
 
-
-    // ----------------------------------------------------------------------
-    // КОНСТРУКТОРЫ
-    // ----------------------------------------------------------------------
-
-    public EstablishmentEntity() {}
-
-    /**
-     * Конструктор для создания нового заведения (ОБНОВЛЕН).
-     */
-    public EstablishmentEntity(
-            String name,
-            Double latitude,
-            Double longitude,
-            String address,
-            String description,
-            Long createdUserId,
-            EstablishmentType type,
-            List<String> photoBase64s) // ⭐ НОВЫЙ ПАРАМЕТР
-    {
-        this.name = name;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.address = address;
-        this.description = description;
-
-        // --- Фиксированные значения для нового заведения ---
-        this.rating = 0.0;
-        this.dateOfCreation = LocalDate.now();
-        this.idMenu = null; 
-        
-        this.createdUserId = createdUserId;
-        this.status = EstablishmentStatus.PENDING_APPROVAL; 
-        
-        this.type = type; 
-        // ⭐ ИНИЦИАЛИЗАЦИЯ НОВОГО ПОЛЯ (может быть null или пустой строкой)
-        this.photoBase64s = photoBase64s; 
-    }
+    // ✅ НОВОЕ РЕШЕНИЕ: Время работы как строка в основной таблице
+    @Column(name = "operating_hours_str", columnDefinition = "TEXT")
+    private String operatingHoursString;
     
-    // ----------------------------------------------------------------------
-    // ГЕТТЕРЫ И СЕТТЕРЫ (ДОПОЛНЕНЫ)
-    // ----------------------------------------------------------------------
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public Double getLatitude() { return latitude; }
-    public void setLatitude(Double latitude) { this.latitude = latitude; }
-    public Double getLongitude() { return longitude; }
-    public void setLongitude(Double longitude) { this.longitude = longitude; }
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public Double getRating() { return rating; }
-    public void setRating(Double rating) { this.rating = rating; }
-    public LocalDate getDateOfCreation() { return dateOfCreation; }
-    public void setDateOfCreation(LocalDate dateOfCreation) { this.dateOfCreation = dateOfCreation; }
-    public Long getIdMenu() { return idMenu; }
-    public void setIdMenu(Long idMenu) { this.idMenu = idMenu; }
-    public Long getCreatedUserId() { return createdUserId; }
-    public void setCreatedUserId(Long createdUserId) { this.createdUserId = createdUserId; }
-    public EstablishmentStatus getStatus() { return status; }
-    public void setStatus(EstablishmentStatus status) { this.status = status; }
-    public EstablishmentType getType() { return type; }
-    public void setType(EstablishmentType type) { this.type = type; }
-    public List<String> getPhotoBase64s() { return photoBase64s; }
-    public void setPhotoBase64s(List<String> photoBase64s) { this.photoBase64s = photoBase64s; }
-
+    // Примечание: Убедитесь, что ваш Spring Boot настроен на автоматическое обновление схемы
+    // (например, spring.jpa.hibernate.ddl-auto=update), чтобы этот новый столбец 
+    // `operating_hours_str` был добавлен в таблицу `establishments`.
 }

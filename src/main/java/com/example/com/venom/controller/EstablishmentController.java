@@ -1,9 +1,11 @@
 package com.example.com.venom.controller;
 
 import java.util.List;
-import java.util.Optional; 
-import java.util.stream.Collectors; // Для маппинга списка
+import java.util.Optional;
+import java.util.stream.Collectors; 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,21 +18,26 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.com.venom.dto.EstablishmentCreationRequest;
-import com.example.com.venom.dto.EstablishmentDisplayDto; 
+import com.example.com.venom.dto.EstablishmentDisplayDto;
+import com.example.com.venom.dto.EstablishmentUpdateRequest;
 import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.entity.EstablishmentStatus;
 import com.example.com.venom.repository.EstablishmentRepository;
 
 import lombok.RequiredArgsConstructor;
 
+// Удалены неиспользуемые импорты java.util.Map и java.util.stream.Collectors (оставлен один)
+
 @RestController
 @RequestMapping("/establishments")
 @RequiredArgsConstructor
 public class EstablishmentController {
 
+    private static final Logger log = LoggerFactory.getLogger(EstablishmentController.class);
+
     private final EstablishmentRepository establishmentRepository;
 
-    // ⭐ НОВАЯ КОНЕЧНАЯ ТОЧКА: Получение заведений по ID пользователя (ОБНОВЛЕНО)
+    // ========================== Получение заведений по ID пользователя ==========================
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<EstablishmentDisplayDto>> findByUserId(@PathVariable Long userId) {
         List<EstablishmentEntity> userEstablishments = establishmentRepository.findByCreatedUserId(userId);
@@ -40,11 +47,11 @@ public class EstablishmentController {
             .map(EstablishmentDisplayDto::fromEntity)
             .collect(Collectors.toList());
         
-        // Возвращаем 200 OK (включая пустой список, если заведений нет)
+        // Возвращаем 200 OK
         return ResponseEntity.ok(dtoList);
     }
 
-    // ========================== Получение всех заведений (ОБНОВЛЕНО) ==========================
+    // ========================== Получение всех заведений ==========================
     @GetMapping("/getAll")
     public ResponseEntity<List<EstablishmentDisplayDto>> getAll() {
         List<EstablishmentEntity> allEntities = establishmentRepository.findAll();
@@ -61,7 +68,7 @@ public class EstablishmentController {
     @GetMapping("/search")
     public ResponseEntity<List<EstablishmentDisplayDto>> searchEstablishments(@RequestParam String query) {
         
-        // Используем новый метод репозитория для поиска по названию ИЛИ адресу
+        // Используем метод репозитория для поиска по названию ИЛИ адресу
         List<EstablishmentEntity> foundEntities = 
             establishmentRepository.findByNameContainingIgnoreCaseOrAddressContainingIgnoreCase(query, query);
             
@@ -77,14 +84,28 @@ public class EstablishmentController {
     // ========================== Получение заведения по ID (ОБНОВЛЕНО) ==========================
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id) {
-        return establishmentRepository.findById(id)
+        Optional<EstablishmentEntity> entity = establishmentRepository.findById(id);
+
+        // ⭐ ЛОГИРОВАНИЕ: Теперь лог только для строки времени работы
+        entity.ifPresent(e -> {
+            log.info("--- [GET /{}]: Entity loaded from DB: {}", id, e.toString());
+            log.info("--- [GET /{}]: OperatingHours String loaded from DB: {}", id, e.getOperatingHoursString());
+        });
+        
+        return entity
             // МАППИНГ: Преобразуем Optional<Entity> в Optional<DisplayDto> и возвращаем 200 OK
-            .<ResponseEntity<?>>map(entity -> ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(entity)))
+            .<ResponseEntity<?>>map(e -> ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(e)))
             .orElse(ResponseEntity.badRequest().body("Заведения с таким id не существует"));
     }
 
+    // ========================== Создание заведения (КРИТИЧЕСКИ ОБНОВЛЕНО) ==========================
     @PostMapping("/create")
     public ResponseEntity<?> register(@RequestBody EstablishmentCreationRequest request) {
+        
+        // Логируем строку времени работы
+        log.info("--- [POST /create] Received EstablishmentCreationRequest. OperatingHours String length: {}", 
+            request.getOperatingHoursString() != null ? request.getOperatingHoursString().length() : 0);
+
         String name = request.getName();
         String address = request.getAddress();
 
@@ -94,19 +115,27 @@ public class EstablishmentController {
             return ResponseEntity.badRequest().body("Заведение с таким названием и адресом уже существует");
         }
     
-        // Создаем сущность из DTO
-        EstablishmentEntity newEstablishmentEntity = new EstablishmentEntity(
-            request.getName(),
-            request.getLatitude(),
-            request.getLongitude(),
-            request.getAddress(),
-            request.getDescription(),
-            request.getCreatedUserId(),
-            request.getType(),
-            request.getPhotoBase64s() // ⭐ ПЕРЕДАЕМ НЕОБЯЗАТЕЛЬНЫЙ СПИСОК ФОТО
-        );
-    
+        EstablishmentEntity newEstablishmentEntity = new EstablishmentEntity();
+        
+        // Устанавливаем все простые поля
+        newEstablishmentEntity.setName(request.getName());
+        newEstablishmentEntity.setLatitude(request.getLatitude());
+        newEstablishmentEntity.setLongitude(request.getLongitude());
+        newEstablishmentEntity.setAddress(request.getAddress());
+        newEstablishmentEntity.setDescription(request.getDescription());
+        newEstablishmentEntity.setCreatedUserId(request.getCreatedUserId());
+        newEstablishmentEntity.setType(request.getType());
+        newEstablishmentEntity.setPhotoBase64s(request.getPhotoBase64s());
+        newEstablishmentEntity.setStatus(EstablishmentStatus.PENDING_APPROVAL); 
+
+        // ⭐ ИСПОЛЬЗУЕМ НОВУЮ СТРОКУ
+        newEstablishmentEntity.setOperatingHoursString(request.getOperatingHoursString());
+
+        log.info("--- [POST /create] Entity before save. OperatingHours String: {}", 
+            newEstablishmentEntity.getOperatingHoursString());
+            
         EstablishmentEntity savedEntity = establishmentRepository.save(newEstablishmentEntity);
+        log.info("--- [POST /create] Entity saved successfully with ID: {}", savedEntity.getId());
         
         // Возвращаем клиенту Display DTO
         return ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(savedEntity));
@@ -114,32 +143,37 @@ public class EstablishmentController {
 
 
     // ========================== Обновление заведения (ОБНОВЛЕНО) ==========================
+    // Принимает Entity, которая теперь должна включать operatingHoursString
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateById(@PathVariable Long id, @RequestBody EstablishmentEntity establishmentEntity) {
-        return establishmentRepository.findById(id)
-            .<ResponseEntity<?>>map(existing -> {
-                
-                // Сохраняем поля, которые не должны меняться (например, дата создания и ID пользователя)
-                establishmentEntity.setId(id);
-                establishmentEntity.setDateOfCreation(existing.getDateOfCreation());
-                establishmentEntity.setCreatedUserId(existing.getCreatedUserId());
+    // ⭐ ИСПОЛЬЗУЕМ НОВЫЙ DTO
+    public ResponseEntity<?> updateById(@PathVariable Long id, @RequestBody EstablishmentUpdateRequest updateRequest) {
+    return establishmentRepository.findById(id)
+        .<ResponseEntity<?>>map(existing -> {
+            
+            // --- 1. Обновляем все поля из DTO ---
+            existing.setName(updateRequest.getName());
+            existing.setDescription(updateRequest.getDescription());
+            existing.setAddress(updateRequest.getAddress());
+            existing.setLatitude(updateRequest.getLatitude());
+            existing.setLongitude(updateRequest.getLongitude());
+            existing.setType(updateRequest.getType());
+            existing.setPhotoBase64s(updateRequest.getPhotoBase64s());
+            
+            // ⭐ 2. ОБЯЗАТЕЛЬНО ОБНОВЛЯЕМ СТРОКУ ВРЕМЕНИ РАБОТЫ
+            existing.setOperatingHoursString(updateRequest.getOperatingHoursString());
+            
+            // (Статус не меняем через PUT, только через отдельный эндпойнт)
+            
+            // --- 3. Сохраняем изменения ---
+            EstablishmentEntity updatedEntity = establishmentRepository.save(existing);
+            
+            // Возвращаем Display DTO
+            return ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(updatedEntity));
+        })
+        .orElse(ResponseEntity.badRequest().body("Заведение с таким id не найдено"));
+}
 
-                // ⭐ Если входящая сущность НЕ передает фото, мы должны сохранить существующие фото (опционально)
-                // Если клиент всегда посылает все данные, это не нужно. 
-                // Но если клиент шлет только измененные поля, нужно объединить данные.
-                
-                // В данном случае, мы доверяем клиенту и просто сохраняем пришедшую сущность.
-                // Если photoBase64s = null/"" в запросе, он перезапишет старые данные на null.
-                
-                EstablishmentEntity updatedEntity = establishmentRepository.save(establishmentEntity);
-                
-                // Возвращаем Display DTO
-                return ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(updatedEntity));
-            })
-            .orElse(ResponseEntity.badRequest().body("Заведение с таким id не найдено"));
-    }
-
-    // ========================== Удаление заведения (Оставлено без изменений) ==========================
+    // ========================== Удаление заведения ==========================
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteById(@PathVariable Long id) {
         return establishmentRepository.findById(id)
@@ -150,13 +184,11 @@ public class EstablishmentController {
             .orElse(ResponseEntity.badRequest().body("Заведение с таким id не найдено"));
     }
 
-    // ========================== ⭐ НОВАЯ КОНЕЧНАЯ ТОЧКА: Одобрение заведения ==========================
-    // Принимает ID заведения и новый статус в теле запроса (или в параметре).
-    // Для простоты будем использовать PUT, который меняет только статус.
+    // ========================== Одобрение заведения ==========================
     @PutMapping("/{id}/status")
         public ResponseEntity<?> updateEstablishmentStatus(
             @PathVariable Long id, 
-            @RequestParam String status // <-- Изменили тип на String
+            @RequestParam String status 
         ) {
     Optional<EstablishmentEntity> optionalEntity = establishmentRepository.findById(id);
 
@@ -166,14 +198,14 @@ public class EstablishmentController {
 
     EstablishmentEntity existing = optionalEntity.get();
     
-    // --- ⭐ ВАЖНОЕ ИЗМЕНЕНИЕ: ВРУЧНУЮ ПРЕОБРАЗУЕМ СТРОКУ В ENUM ---
+    // --- ВРУЧНУЮ ПРЕОБРАЗУЕМ СТРОКУ В ENUM ---
     EstablishmentStatus newStatus;
     try {
-    newStatus = EstablishmentStatus.valueOf(status.toUpperCase()); 
-} catch (IllegalArgumentException e) {
-    // 🔥 Если сработал этот блок, сервер вернет 400
-    return ResponseEntity.badRequest().body("Недопустимое значение статуса: " + status);
-}
+        newStatus = EstablishmentStatus.valueOf(status.toUpperCase()); 
+    } catch (IllegalArgumentException e) {
+        // 🔥 Если сработал этот блок, сервер вернет 400
+        return ResponseEntity.badRequest().body("Недопустимое значение статуса: " + status);
+    }
     // -----------------------------------------------------------
     
     // Обновляем статус
@@ -186,10 +218,10 @@ public class EstablishmentController {
     return ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(updatedEntity));
 }
     
-    // ========================== ⭐ НОВАЯ КОНЕЧНАЯ ТОЧКА: Получение неодобренных (PENDING) ==========================
+    // ========================== Получение неодобренных (PENDING) ==========================
     @GetMapping("/pending")
     public ResponseEntity<List<EstablishmentDisplayDto>> getPendingEstablishments() {
-        // Используем новый метод репозитория
+        // Используем метод репозитория
         List<EstablishmentEntity> pendingEntities = 
             establishmentRepository.findByStatus(EstablishmentStatus.PENDING_APPROVAL);
 
