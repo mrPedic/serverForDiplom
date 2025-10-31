@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.com.venom.dto.EstablishmentCreationRequest;
 import com.example.com.venom.dto.EstablishmentDisplayDto;
+import com.example.com.venom.dto.EstablishmentMarkerDto;
 import com.example.com.venom.dto.EstablishmentUpdateRequest;
 import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.entity.EstablishmentStatus;
@@ -26,7 +27,6 @@ import com.example.com.venom.repository.EstablishmentRepository;
 
 import lombok.RequiredArgsConstructor;
 
-// Удалены неиспользуемые импорты java.util.Map и java.util.stream.Collectors (оставлен один)
 
 @RestController
 @RequestMapping("/establishments")
@@ -62,6 +62,27 @@ public class EstablishmentController {
             .collect(Collectors.toList());
         
         return ResponseEntity.ok(dtoList);
+    }
+
+    // ========================== Получение облегченных данных для маркеров ==========================
+    /**
+     * Возвращает список заведений с минимальным набором полей для отображения на карте.
+     */
+    @GetMapping("/markers")
+    public ResponseEntity<List<EstablishmentMarkerDto>> getAllEstablishmentMarkers() {
+        // 1. Загружаем все сущности. Поскольку DTO содержит только простые поля, 
+        // это будет быстрее, чем загрузка DisplayDto (который включает большие строки base64, если они не игнорируются).
+        List<EstablishmentEntity> allEntities = establishmentRepository.findAll();
+
+        // 2. МАППИНГ: Преобразуем List<Entity> в List<MarkerDto>
+        List<EstablishmentMarkerDto> markerDtoList = allEntities.stream()
+            .map(EstablishmentMarkerDto::fromEntity) // ⭐ Используем новый маппер
+            .collect(Collectors.toList());
+        
+        log.info("--- [GET /markers] Found {} establishments. Returning minimal DTO list.", markerDtoList.size());
+
+        // 3. Возвращаем 200 OK
+        return ResponseEntity.ok(markerDtoList);
     }
 
     // ========================== Поиск заведений ==========================
@@ -106,6 +127,7 @@ public class EstablishmentController {
         log.info("--- [POST /create] Received EstablishmentCreationRequest. OperatingHours String length: {}", 
             request.getOperatingHoursString() != null ? request.getOperatingHoursString().length() : 0);
 
+            
         String name = request.getName();
         String address = request.getAddress();
 
