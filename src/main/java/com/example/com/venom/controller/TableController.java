@@ -53,11 +53,10 @@ public class TableController {
         // Сохраняем столики через сервис
         List<TableEntity> savedTables = tableService.createTablesForEstablishment(establishmentId, tableDtos);
 
-        log.info("--- [POST /tables/establishment/{}] Successfully created {} tables.", 
+        log.info("--- [POST /tables/establishment/{}] Successfully created {} table s.", 
                  establishmentId, savedTables.size());
 
         // Возвращаем клиенту созданные сущности (включая их новые ID)
         return ResponseEntity.ok(savedTables);
     }
-
 }

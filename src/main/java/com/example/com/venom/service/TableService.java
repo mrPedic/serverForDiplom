@@ -1,5 +1,6 @@
 package com.example.com.venom.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,5 +46,38 @@ public class TableService {
         }
 
         return savedTables;
+    }
+
+    /**
+     * Возвращает список столиков, доступных для бронирования
+     * в указанном заведении на указанное время.
+     * * ВНИМАНИЕ: Здесь должна быть реальная логика проверки занятости, 
+     * которая обращается к таблице бронирований. 
+     * * @param establishmentId ID заведения.
+     * @param dateTime Время начала бронирования (ISO 8601).
+     * @return Список доступных столиков.
+     */
+    public List<TableEntity> getAvailableTables(Long establishmentId, LocalDateTime dateTime) {
+        // Шаг 1: Получаем все столики заведения
+        List<TableEntity> allTables = tableRepository.findByEstablishmentId(establishmentId);
+
+        // Шаг 2: Реализация логики проверки доступности
+        
+        // ⭐ ЗАГЛУШКА БЕЗ ПРОВЕРКИ БРОНИРОВАНИЯ:
+        // Если у вас нет таблицы бронирований, эта заглушка вернет все столики.
+        // Этого достаточно, чтобы исправить ошибку 404 и продолжить разработку.
+        // ВАЖНО: В боевом коде здесь нужно исключить столики, которые уже забронированы.
+        
+        System.out.println("--- [TableService] Finding all tables for estId: " + establishmentId);
+        
+        return allTables;
+        
+        /* // ⭐ ПРИМЕР РЕАЛЬНОЙ ЛОГИКИ (если BookingRepository внедрен):
+        // List<Long> reservedTableIds = bookingRepository.findReservedTableIds(establishmentId, dateTime);
+        
+        // return allTables.stream()
+        //     .filter(table -> !reservedTableIds.contains(table.getId()))
+        //     .collect(Collectors.toList());
+        */
     }
 }
