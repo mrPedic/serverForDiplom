@@ -11,9 +11,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.com.venom.StatusForBooking;
 import com.example.com.venom.dto.BookingCreationDto;
+import com.example.com.venom.dto.BookingDisplayDto;
 import com.example.com.venom.entity.BookingEntity;
+import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.entity.TableEntity;
 import com.example.com.venom.repository.BookingRepository;
+import com.example.com.venom.repository.EstablishmentRepository;
 import com.example.com.venom.repository.TableRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -23,7 +26,8 @@ import lombok.RequiredArgsConstructor;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
-    private final TableRepository tableRepository; // Для проверки существования столика
+    private final TableRepository tableRepository; 
+    private final EstablishmentRepository establishmentRepository; 
 
     // ⭐ КОНФИГУРАЦИЯ: Стандартная продолжительность бронирования (например, 1.5 часа)
     private static final long DEFAULT_BOOKING_DURATION_MINUTES = 90; 
@@ -112,4 +116,47 @@ public class BookingService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Возвращает список бронирований для конкретного пользователя, 
+     * обогащенных деталями для отображения (DTO).
+     * @param userId ID пользователя.
+     * @return Список BookingDisplayDto.
+     */
+    public List<BookingDisplayDto> getUserBookings(Long userId) {
+        // 1. Найти все бронирования пользователя (независимо от статуса)
+        List<BookingEntity> userBookings = bookingRepository.findByUserId(userId);
+
+        if (userBookings.isEmpty()) {
+            return List.of(); // Возвращаем пустой список, если бронирований нет
+        }
+        
+        // 2. Преобразование в DTO с обогащением данных
+        return userBookings.stream()
+            .map(booking -> {
+                // Получаем данные о столике
+                TableEntity table = tableRepository.findById(booking.getTableId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Столик не найден"));
+                
+                // Получаем данные о заведении
+                EstablishmentEntity establishment = establishmentRepository.findById(booking.getEstablishmentId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Заведение не найдено"));
+                
+                // Создаем и возвращаем DTO
+                long durationMinutes = java.time.temporal.ChronoUnit.MINUTES.between(booking.getStartTime(), booking.getEndTime());
+                
+                return BookingDisplayDto.builder()
+                    .id(booking.getId())
+                    .establishmentName(establishment.getName())
+                    .establishmentAddress(establishment.getAddress())
+                    .establishmentLatitude(establishment.getLatitude())
+                    .establishmentLongitude(establishment.getLongitude())
+                    .tableName(table.getName())
+                    .tableMaxCapacity(table.getMaxCapacity())
+                    .startTime(booking.getStartTime())
+                    .durationMinutes(durationMinutes) // Используем фактическую продолжительность
+                    .status(booking.getStatus().name()) // Преобразуем Enum в String
+                    .build();
+            })
+            .collect(Collectors.toList());
+    }
 }   

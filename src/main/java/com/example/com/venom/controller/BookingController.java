@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.com.venom.dto.BookingCreationDto; 
+import com.example.com.venom.dto.BookingCreationDto;
 import com.example.com.venom.entity.BookingEntity;
 import com.example.com.venom.entity.TableEntity;
 import com.example.com.venom.service.BookingService; 
@@ -82,5 +82,26 @@ public class BookingController {
                  establishmentId, availableTables.size());
 
         return ResponseEntity.ok(availableTables);
+    }
+
+    /**
+     * Эндпоинт для получения всех бронирований конкретного пользователя.
+     * Путь: GET /bookings/user/{userId}
+     * @param userId ID пользователя, чьи бронирования нужно получить.
+     * @return Список бронирований пользователя.
+     */
+    @GetMapping("/user/{userId}") // Итоговый путь: /bookings/user/{userId}
+    public ResponseEntity<List<com.example.com.venom.dto.BookingDisplayDto>> getUserBookings(
+        @PathVariable Long userId
+    ) {
+        log.info("--- [GET /bookings/user/{}] Fetching bookings for user.", userId);
+        
+        // *ВНИМАНИЕ*: Предполагается, что у вас есть метод в BookingService,
+        // который возвращает список DTO для отображения.
+        List<com.example.com.venom.dto.BookingDisplayDto> userBookings = bookingService.getUserBookings(userId);
+        
+        log.info("--- [GET /bookings/user/{}] Found {} bookings.", userId, userBookings.size());
+        
+        return ResponseEntity.ok(userBookings);
     }
 }
