@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping; // ⭐ ДОБАВЛЕН ИМПОРТ
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,11 +14,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.com.venom.dto.RatingStats;
 import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.entity.ReviewEntity;
 import com.example.com.venom.repository.EstablishmentRepository;
 import com.example.com.venom.repository.ReviewRepository;
+import com.example.com.venom.service.ReviewService; // ⭐ ДОБАВЛЕН ИМПОРТ СЕРВИСА
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j; // ⭐ ИМПОРТ ДЛЯ ЛОГГИРОВАНИЯ
@@ -29,6 +31,7 @@ public class ReviewController {
 
     private final ReviewRepository reviewRepository;
     private final EstablishmentRepository establishmentRepository;
+    private final ReviewService reviewService; // ⭐ ВНЕДРЕНИЕ СЕРВИСА ДЛЯ СЛОЖНОЙ ЛОГИКИ
 
     // ========================== Создание отзыва (POST) ==========================
     @PostMapping("/create")
@@ -71,27 +74,12 @@ public class ReviewController {
         //     return ResponseEntity.badRequest().body("Вы уже оставляли отзыв на это заведение.");
         // }
 
-        // 4. Сохранение отзыва
+        // 4. Сохранение отзыва и обновление рейтинга
         try {
-            log.info("Попытка сохранения отзыва...");
-            ReviewEntity savedReview = reviewRepository.save(review);
-            reviewRepository.flush(); // ⭐ Использование save() + flush() равносильно saveAndFlush()
+            log.info("Попытка сохранения отзыва и обновления рейтинга...");
+            ReviewEntity savedReview = reviewService.saveReviewAndUpdateEstablishmentRating(review, establishment);
+            
             log.info("Отзыв успешно сохранен. ID нового отзыва: {}", savedReview.getId());
-            
-            // 5. ⭐ ЛОГИКА ОБНОВЛЕНИЯ СРЕДНЕГО РЕЙТИНГА
-            
-            log.info("Запрос статистики рейтинга для заведения ID: {}", establishment.getId());
-            RatingStats stats = reviewRepository.getAverageRatingAndCountByEstablishmentId(establishment.getId());
-            
-            log.info("Полученная статистика: AVG Rating = {}, Count = {}", stats.getAverageRating(), stats.getReviewCount());
-            
-            // Обновляем сущность заведения
-            establishment.setRating(stats.getAverageRating());
-            
-            // Сохраняем обновленное заведение (поле rating)
-            EstablishmentEntity updatedEstablishment = establishmentRepository.save(establishment);
-            log.info("Заведение ID {} обновлено. Новый рейтинг: {}", updatedEstablishment.getId(), updatedEstablishment.getRating());
-
             // Готово!
             return ResponseEntity.ok(savedReview); // Возвращаем сохраненный объект
             
@@ -106,7 +94,42 @@ public class ReviewController {
     // ========================== Получение отзывов по ID заведения (GET) ==========================
     @GetMapping("/establishment/{establishmentId}")
     public ResponseEntity<List<ReviewEntity>> getReviewsByEstablishmentId(@PathVariable Long establishmentId) {
+        log.info("--- [GET /reviews/establishment/{}] Request received for reviews.", establishmentId);
         List<ReviewEntity> reviews = reviewRepository.findByEstablishmentId(establishmentId);
+        log.info("--- [GET /reviews/establishment/{}] Found {} reviews.", establishmentId, reviews.size());
         return ResponseEntity.ok(reviews);
+    }
+    
+    // ========================== Удаление отзыва по ID (DELETE) ==========================
+    /**
+     * Эндпойнт для удаления отзыва по его ID.
+     * После удаления отзыва, рейтинг заведения должен быть пересчитан.
+     * Соответствует DELETE /reviews/{id} в ApiService.
+     * @param id ID отзыва для удаления.
+     * @return 204 No Content в случае успеха или 404/500 в случае ошибки.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
+        log.info("--- [DELETE /reviews/{}] Request received for deletion.", id);
+
+        if (id == null || id <= 0) {
+            log.warn("--- [DELETE /reviews/{}] Invalid review ID provided.", id);
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            // ⭐ Делегируем логику удаления и пересчета рейтинга сервису
+            reviewService.deleteReviewAndUpdateEstablishmentRating(id);
+            log.info("--- [DELETE /reviews/{}] Review successfully deleted and establishment rating updated.", id);
+            return ResponseEntity.noContent().build(); // 204 No Content - стандартный ответ для успешного удаления
+        } catch (IllegalArgumentException e) {
+            // Это может быть выброшено, если отзыв не найден
+            log.warn("--- [DELETE /reviews/{}] Review not found: {}", id, e.getMessage());
+            return ResponseEntity.notFound().build(); // 404 Not Found
+        } catch (Exception e) {
+            log.error("--- [DELETE /reviews/{}] Error deleting review: {}", id, e.getMessage(), e);
+            // Возвращаем 500 Internal Server Error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

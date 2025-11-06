@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -103,5 +104,23 @@ public class BookingController {
         log.info("--- [GET /bookings/user/{}] Found {} bookings.", userId, userBookings.size());
         
         return ResponseEntity.ok(userBookings);
+    }
+    /**
+     * Эндпоинт для отмены (удаления) существующего бронирования.
+     * Путь: DELETE /bookings/{bookingId}
+     * @param bookingId ID бронирования, которое нужно отменить.
+     */
+    @DeleteMapping("/{bookingId}") // Итоговый путь: /bookings/{bookingId}
+    public ResponseEntity<Void> cancelBooking(@PathVariable Long bookingId) {
+        log.info("--- [DELETE /bookings/{}] Attempting to cancel booking.", bookingId);
+
+        // Вся логика удаления и проверки (например, можно ли отменить)
+        // должна быть реализована в BookingService.
+        bookingService.cancelBooking(bookingId); 
+
+        log.info("--- [DELETE /bookings/{}] Successfully cancelled booking.", bookingId);
+
+        // Возвращаем статус 204 No Content, который Retrofit ожидает для Response<Unit>
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

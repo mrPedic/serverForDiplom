@@ -19,6 +19,7 @@ import com.example.com.venom.repository.BookingRepository;
 import com.example.com.venom.repository.EstablishmentRepository;
 import com.example.com.venom.repository.TableRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -158,5 +159,34 @@ public class BookingService {
                     .build();
             })
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Отменяет бронирование по его ID.
+     */
+    @Transactional // Обязательно для операций с БД, меняющих состояние
+    public void cancelBooking(Long bookingId) {
+        // 1. Найти бронирование
+        BookingEntity booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> {
+                // Если бронирование не найдено, выбросить исключение 404
+                return new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, 
+                    "Бронирование с ID " + bookingId + " не найдено."
+                );
+            });
+            
+        // 2. Опциональная бизнес-логика: Проверка, можно ли отменить (например, не позднее, чем за 1 час)
+        // if (booking.getStartTime().isBefore(LocalDateTime.now().plusHours(1))) {
+        //     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Отмена невозможна менее чем за 1 час до начала.");
+        // }
+        
+        // 3. Выполнить удаление
+        // Вариант А: Физическое удаление
+        bookingRepository.delete(booking);
+        
+        // Вариант Б: Логическое удаление/обновление статуса (если у BookingEntity есть поле 'status')
+        // booking.setStatus(BookingStatus.CANCELLED);
+        // bookingRepository.save(booking); 
     }
 }   

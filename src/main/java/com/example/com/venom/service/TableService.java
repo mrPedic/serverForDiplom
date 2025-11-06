@@ -47,6 +47,16 @@ public class TableService {
 
         return savedTables;
     }
+    
+    /**
+     * ⭐ ДОБАВЛЕНО: Возвращает все столики, привязанные к указанному заведению.
+     * Используется для отображения всех столиков в панели управления заведения.
+     * @param establishmentId ID заведения.
+     * @return Список всех столиков заведения.
+     */
+    public List<TableEntity> findAllByEstablishmentId(Long establishmentId) {
+        return tableRepository.findByEstablishmentId(establishmentId);
+    }
 
     /**
      * Возвращает список столиков, доступных для бронирования
@@ -64,10 +74,6 @@ public class TableService {
         // Шаг 2: Реализация логики проверки доступности
         
         // ⭐ ЗАГЛУШКА БЕЗ ПРОВЕРКИ БРОНИРОВАНИЯ:
-        // Если у вас нет таблицы бронирований, эта заглушка вернет все столики.
-        // Этого достаточно, чтобы исправить ошибку 404 и продолжить разработку.
-        // ВАЖНО: В боевом коде здесь нужно исключить столики, которые уже забронированы.
-        
         System.out.println("--- [TableService] Finding all tables for estId: " + establishmentId);
         
         return allTables;
@@ -76,8 +82,19 @@ public class TableService {
         // List<Long> reservedTableIds = bookingRepository.findReservedTableIds(establishmentId, dateTime);
         
         // return allTables.stream()
-        //     .filter(table -> !reservedTableIds.contains(table.getId()))
-        //     .collect(Collectors.toList());
+        //     .filter(table -> !reservedTableIds.contains(table.getId()))
+        //     .collect(Collectors.toList());
         */
+    }
+    
+    /**
+     * ⭐ ДОБАВЛЕНО: Удаляет столик по его уникальному идентификатору.
+     * @param id ID столика для удаления.
+     */
+    public void deleteTable(Long id) {
+        // Spring Data JPA выполняет проверку существования ID внутри deleteById.
+        // Если ID не существует, будет выброшено исключение EmptyResultDataAccessException, 
+        // которое, при необходимости, можно перехватить в контроллере.
+        tableRepository.deleteById(id);
     }
 }
