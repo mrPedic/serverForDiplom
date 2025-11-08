@@ -172,6 +172,18 @@
             margin-top: 18px;
         }
 
+        @media (max-width: 700px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .tile {
             background: linear-gradient(180deg, #182050, #141a44);
             border: 1px solid rgba(255,255,255,0.06);
@@ -224,6 +236,8 @@
 
         @media (max-width: 900px) {
             .hero { grid-template-columns: 1fr; }
+            header { flex-direction: column; align-items: flex-start; }
+            nav { width: 100%; justify-content: flex-start; }
         }
     </style>
 </head>
@@ -243,38 +257,94 @@
 
         <section class="hero">
             <div class="card">
-                <span class="badge">Java • Spring Boot</span>
-                <h1>Welcome to your Venom backend</h1>
-                <p class="subtitle">A clean landing page for your server with quick access to common endpoints. Use it while developing, or keep it as a lightweight home page in production.</p>
+                <span class="badge">Java • Spring Boot • PostgreSQL</span>
+                <h1>Venom Restaurant Booking API</h1>
+                <p class="subtitle">REST API для системы бронирования столиков в заведениях. Управление ресторанами, меню, бронированиями и отзывами. Полностью функциональный backend с 40 эндпоинтами.</p>
                 <div class="actions">
-                    <a class="btn" href="/establishments" target="_blank" rel="noopener">View establishments</a>
-                    <a class="btn secondary" href="/hello.html">Refresh</a>
+                    <a class="btn" href="/establishments/getAll" target="_blank" rel="noopener">Все заведения</a>
+                    <a class="btn secondary" href="/test/ping" target="_blank" rel="noopener">Health Check</a>
                 </div>
 
                 <div id="features" class="grid">
                     <div class="tile">
-                        <h3>Fast</h3>
-                        <p>Lightweight, responsive, and self-contained styling.</p>
+                        <h3>🏢 Заведения</h3>
+                        <p>Создание, управление и поиск ресторанов с поддержкой статусов и геолокации.</p>
                     </div>
                     <div class="tile">
-                        <h3>Practical</h3>
-                        <p>Links to frequently used API endpoints during development.</p>
+                        <h3>📅 Бронирования</h3>
+                        <p>Система бронирования столиков с проверкой доступности и управлением расписанием.</p>
                     </div>
                     <div class="tile">
-                        <h3>Secure by default</h3>
-                        <p>No external fonts or scripts. Easy to host.</p>
+                        <h3>🍽️ Меню</h3>
+                        <p>Полноценное управление меню: группы блюд и напитков, цены, опции.</p>
+                    </div>
+                    <div class="tile">
+                        <h3>⭐ Отзывы</h3>
+                        <p>Система отзывов с автоматическим пересчетом рейтинга заведений.</p>
+                    </div>
+                    <div class="tile">
+                        <h3>👥 Пользователи</h3>
+                        <p>Регистрация, авторизация и управление профилями пользователей.</p>
+                    </div>
+                    <div class="tile">
+                        <h3>🪑 Столики</h3>
+                        <p>Управление столиками заведений с указанием вместимости и характеристик.</p>
                     </div>
                 </div>
             </div>
 
             <div id="api" class="card">
-                <h2 style="margin: 0 0 8px;">API endpoints</h2>
-                <p class="subtitle" style="margin: 0 0 10px;">Explore some core routes exposed by your server.</p>
+                <h2 style="margin: 0 0 8px;">API Overview</h2>
+                <p class="subtitle" style="margin: 0 0 16px;">Всего <strong style="color: var(--accent);">40 эндпоинтов</strong> в 8 контроллерах</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+                    <div class="tile" style="padding: 12px;">
+                        <h3 style="margin: 0 0 4px; font-size: 14px;">Authorization</h3>
+                        <p style="margin: 0; font-size: 12px;">3 эндпоинта</p>
+                    </div>
+                    <div class="tile" style="padding: 12px;">
+                        <h3 style="margin: 0 0 4px; font-size: 14px;">Establishments</h3>
+                        <p style="margin: 0; font-size: 12px;">10 эндпоинтов</p>
+                    </div>
+                    <div class="tile" style="padding: 12px;">
+                        <h3 style="margin: 0 0 4px; font-size: 14px;">Bookings</h3>
+                        <p style="margin: 0; font-size: 12px;">4 эндпоинта</p>
+                    </div>
+                    <div class="tile" style="padding: 12px;">
+                        <h3 style="margin: 0 0 4px; font-size: 14px;">Menu</h3>
+                        <p style="margin: 0; font-size: 12px;">11 эндпоинтов</p>
+                    </div>
+                    <div class="tile" style="padding: 12px;">
+                        <h3 style="margin: 0 0 4px; font-size: 14px;">Reviews</h3>
+                        <p style="margin: 0; font-size: 12px;">3 эндпоинта</p>
+                    </div>
+                    <div class="tile" style="padding: 12px;">
+                        <h3 style="margin: 0 0 4px; font-size: 14px;">Tables</h3>
+                        <p style="margin: 0; font-size: 12px;">3 эндпоинта</p>
+                    </div>
+                </div>
+
+                <h3 style="margin: 16px 0 10px; font-size: 16px;">Популярные эндпоинты</h3>
                 <div class="endpoints">
                     <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <code>/auth/register</code>
+                        <span style="color: var(--muted); font-size: 12px;">Регистрация</span>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <code>/auth/login</code>
+                        <span style="color: var(--muted); font-size: 12px;">Авторизация</span>
+                    </div>
+                    <div class="endpoint">
                         <div class="method get">GET</div>
-                        <code>/establishments</code>
-                        <a class="try" href="/establishments" target="_blank" rel="noopener">Try</a>
+                        <code>/establishments/getAll</code>
+                        <a class="try" href="/establishments/getAll" target="_blank" rel="noopener">Try</a>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <code>/establishments/markers</code>
+                        <a class="try" href="/establishments/markers" target="_blank" rel="noopener">Try</a>
                     </div>
                     <div class="endpoint">
                         <div class="method get">GET</div>
@@ -283,31 +353,41 @@
                     </div>
                     <div class="endpoint">
                         <div class="method get">GET</div>
-                        <code>/establishments/{id}/menu</code>
-                        <a class="try" href="/establishments/1/menu" target="_blank" rel="noopener">Try</a>
+                        <code>/menu/establishment/{id}</code>
+                        <a class="try" href="/menu/establishment/1" target="_blank" rel="noopener">Try</a>
                     </div>
                     <div class="endpoint">
                         <div class="method post">POST</div>
-                        <code>/establishments</code>
-                        <a class="try" href="#" onclick="alert('Use a REST client to POST JSON'); return false;">How?</a>
+                        <code>/bookings</code>
+                        <span style="color: var(--muted); font-size: 12px;">Создать бронь</span>
                     </div>
                     <div class="endpoint">
-                        <div class="method put">PUT</div>
-                        <code>/establishments/{id}</code>
-                        <a class="try" href="#" onclick="alert('Use a REST client to PUT JSON'); return false;">How?</a>
+                        <div class="method get">GET</div>
+                        <code>/reviews/establishment/{id}</code>
+                        <a class="try" href="/reviews/establishment/1" target="_blank" rel="noopener">Try</a>
                     </div>
                     <div class="endpoint">
-                        <div class="method delete">DELETE</div>
-                        <code>/establishments/{id}</code>
-                        <a class="try" href="#" onclick="alert('Use a REST client to DELETE'); return false;">How?</a>
+                        <div class="method get">GET</div>
+                        <code>/tables/establishment/{id}</code>
+                        <a class="try" href="/tables/establishment/1" target="_blank" rel="noopener">Try</a>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <code>/test/ping</code>
+                        <a class="try" href="/test/ping" target="_blank" rel="noopener">Try</a>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- <footer id="about">
-            Made with ❤️ for your Spring Boot project. Customize this page in <code>src/main/java/com/example/com/hello.html</code>
-        </footer> -->
+        <footer id="about" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.06);">
+            <p style="margin: 0 0 8px; color: var(--muted); text-align: center; font-size: 13px;">
+                Venom Restaurant Booking API • Spring Boot 3.5.0 • Java 21 • PostgreSQL
+            </p>
+            <p style="margin: 0; color: var(--muted); text-align: center; font-size: 12px; opacity: 0.7;">
+                Система управления заведениями, бронированиями и отзывами
+            </p>
+        </footer>
     </div>
 </body>
 </html>

@@ -35,9 +35,6 @@ public class UserController {
             if (accountEntity.getLogin() != null) {
                 accountToUpdate.setLogin(accountEntity.getLogin());
             }
-            if (accountEntity.getEmail() != null) {
-                accountToUpdate.setEmail(accountEntity.getEmail());
-            }
             if (accountEntity.getRole() != null) {
                 accountToUpdate.setRole(accountEntity.getRole());
             }

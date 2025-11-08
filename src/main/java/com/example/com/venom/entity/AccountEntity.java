@@ -33,9 +33,6 @@ public class AccountEntity {
     @Column(name = "role")
     private Role role;
 
-    @Column(name = "email", unique = true)
-    private String email;
-
     @Column(name="date")
     private LocalDate dateOfCreation = LocalDate.now();
 
@@ -57,11 +54,8 @@ public class AccountEntity {
     public String getName() { return name; }
     public Role getRole() { return role; }
     public String getPassword() { return password; }
-    public String getEmail() { return email; }
     public LocalDate getDate(){return dateOfCreation;}
 
-
-    public void setEmail(String email) { this.email = email; }
     public void setId(Long id){this.id = id;}
     public void setName(String name) { this.name = name; }
     public void setPassword(String password) { this.password = password; }

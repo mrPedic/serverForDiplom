@@ -23,11 +23,11 @@ public interface EstablishmentRepository extends JpaRepository<EstablishmentEnti
 
     // 3. ⭐ ПОИСК: По части названия ИЛИ части адреса (без учета регистра, для экрана поиска)
     @Query(value = 
-        "SELECT * FROM establishments " +
-        "WHERE LOWER(\"name\") LIKE LOWER(CONCAT('%', :query, '%')) " +
-        "OR LOWER(\"address\") LIKE LOWER(CONCAT('%', :query, '%'))", 
-        nativeQuery = true)
-    List<EstablishmentEntity> findByNameContainingIgnoreCaseOrAddressContainingIgnoreCase(@Param("query") String query, @Param("query") String address);
+    	"SELECT * FROM establishments " +
+    	"WHERE LOWER(\"name\") LIKE LOWER(CONCAT('%', :query, '%')) " +
+    	"OR LOWER(\"address\") LIKE LOWER(CONCAT('%', :query, '%'))", 
+    	nativeQuery = true)
+    List<EstablishmentEntity> searchByNameOrAddress(@Param("query") String query);
     
     // 4. Поиск по ID пользователя, создавшего заведение
     @Query(value = "SELECT * FROM establishments WHERE \"created_user_id\" = :userId", nativeQuery = true)
