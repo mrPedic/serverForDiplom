@@ -30,19 +30,12 @@ public class EstablishmentEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String name;
-
     private Double latitude;
-
     private Double longitude;
-
     private String address;
-
     private String description;
-
     private Double rating = 0.0;
-
     private Long idMenu;
 
     @Column(name = "created_user_id")

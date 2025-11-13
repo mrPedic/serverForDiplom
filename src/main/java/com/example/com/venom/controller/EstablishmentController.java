@@ -6,9 +6,21 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping; 
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.example.com.venom.dto.*;
+import com.example.com.venom.dto.EstablishmentCreationRequest; 
+import com.example.com.venom.dto.EstablishmentDisplayDto;
+import com.example.com.venom.dto.EstablishmentMarkerDto;
+import com.example.com.venom.dto.EstablishmentSearchResultDto;
+import com.example.com.venom.dto.EstablishmentUpdateRequest;
 import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.entity.EstablishmentStatus;
 import com.example.com.venom.service.EstablishmentService;
@@ -22,8 +34,8 @@ import lombok.RequiredArgsConstructor;
 public class EstablishmentController {
 
     private static final Logger log = LoggerFactory.getLogger(EstablishmentController.class);
-    // ⭐ УДАЛЯЕМ! Вся логика работы с базой данных теперь в EstablishmentService.
-    // private final EstablishmentRepository establishmentRepository; 
+    
+    
     private final EstablishmentService establishmentService;
 
     // ========================== Получение заведений по ID пользователя ==========================
@@ -51,13 +63,14 @@ public class EstablishmentController {
         return ResponseEntity.ok(markerDtoList);
     }
 
-    // ========================== Поиск заведений ==========================
+    // ========================== Поиск заведений (ИСПРАВЛЕНО) ==========================
     @GetMapping("/search")
     public ResponseEntity<List<EstablishmentSearchResultDto>> searchEstablishments(
-        @RequestParam(required = false) String query
+        @RequestParam(required = false) String query,
+        @RequestParam(required = false) List<String> types // ⭐ ДОБАВЛЕН ПАРАМЕТР "types"
     ) {
-        // ⭐ ДЕЛЕГИРОВАНИЕ СЕРВИСУ (Сервис обрабатывает null/blank)
-        List<EstablishmentSearchResultDto> results = establishmentService.searchEstablishments(query);
+        // ⭐ ДЕЛЕГИРОВАНИЕ СЕРВИСУ (Сервис обрабатывает null/blank и типы)
+        List<EstablishmentSearchResultDto> results = establishmentService.searchEstablishments(query, types);
         return ResponseEntity.ok(results);
     }
 
@@ -76,8 +89,7 @@ public class EstablishmentController {
     @PostMapping("/create")
     public ResponseEntity<?> register(@RequestBody EstablishmentCreationRequest request) {
         
-        log.info("--- [POST /create] Received EstablishmentCreationRequest. OperatingHours String length: {}", 
-            request.getOperatingHoursString() != null ? request.getOperatingHoursString().length() : 0);
+        log.info("--- [POST /create] Received EstablishmentCreationRequest.");
             
         try {
             // ⭐ ДЕЛЕГИРОВАНИЕ СЕРВИСУ
