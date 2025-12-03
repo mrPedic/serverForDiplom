@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <div id="messages"></div>
+    <input id="input" type="text" placeholder="Type message...">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8080/ws/chat');
+        const messagesDiv = document.getElementById('messages');
+        const input = document.getElementById('input');
+
+        ws.onopen = () => {
+            messagesDiv.innerHTML += '<p>Connected!</p>';
+        };
+
+        ws.onmessage = (event) => {
+            messagesDiv.innerHTML += `<p>Received: ${event.data}</p>`;
+        };
+
+        ws.onclose = () => {
+            messagesDiv.innerHTML += '<p>Disconnected</p>';
+        };
+
+        function sendMessage() {
+            ws.send(input.value);
+            input.value = '';
+        }
+    </script>
+</body>
+</html>
