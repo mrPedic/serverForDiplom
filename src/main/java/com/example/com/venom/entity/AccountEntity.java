@@ -1,14 +1,22 @@
 package com.example.com.venom.entity;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -46,6 +54,24 @@ public class AccountEntity {
         this.login = login;
         this.password = password;
         this.role = role;
+    }
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "user_favorites", // Имя промежуточной таблицы в БД
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "establishment_id")
+    )
+    @JsonIgnore // Мы не хотим отдавать список избранного при каждом запросе User, это тяжело
+    private Set<EstablishmentEntity> favorites = new HashSet<>();
+
+    // Getters and Setters для favorites
+    public Set<EstablishmentEntity> getFavorites() {
+        return favorites;
+    }
+
+    public void setFavorites(Set<EstablishmentEntity> favorites) {
+        this.favorites = favorites;
     }
 
     public Long getId(){ return this.id; }

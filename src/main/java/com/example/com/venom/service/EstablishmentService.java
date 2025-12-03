@@ -1,4 +1,3 @@
-
 package com.example.com.venom.service;
 
 import java.util.Collections;
@@ -27,74 +26,78 @@ import lombok.extern.slf4j.Slf4j;
 public class EstablishmentService {
 
     private final EstablishmentRepository establishmentRepository;
+    
+    // Константа для ограничения количества фото
+    private static final int MAX_PHOTOS_COUNT = 5;
 
     // ========================== МЕТОДЫ ПОЛУЧЕНИЯ ДАННЫХ ==========================
 
     /**
      * Получает все заведения для отображения.
-     * @return Список DTO заведений.
+     * * @return Список DTO заведений.
      */
     public List<EstablishmentDisplayDto> findAll() {
         List<EstablishmentEntity> allEntities = establishmentRepository.findAll();
         return allEntities.stream()
-            .map(EstablishmentDisplayDto::fromEntity)
-            .collect(Collectors.toList());
+                .map(EstablishmentDisplayDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
-     * Возвращает список заведений с минимальным набором полей для отображения на карте.
-     * @return Список Marker DTO.
+     * Возвращает список заведений с минимальным набором полей для отображения на
+     * карте.
+     * * @return Список Marker DTO.
      */
     public List<EstablishmentMarkerDto> findAllMarkers() {
         List<EstablishmentEntity> allEntities = establishmentRepository.findAll();
         List<EstablishmentMarkerDto> markerDtoList = allEntities.stream()
-            .map(EstablishmentMarkerDto::fromEntity)
-            .collect(Collectors.toList());
+                .map(EstablishmentMarkerDto::fromEntity)
+                .collect(Collectors.toList());
         log.info("--- [Service: Markers] Found {} establishments.", markerDtoList.size());
         return markerDtoList;
     }
 
     /**
      * Получает заведение по ID.
-     * @param id ID заведения.
+     * * @param id ID заведения.
      * @return Optional с сущностью заведения.
      */
     public Optional<EstablishmentEntity> findById(Long id) {
         Optional<EstablishmentEntity> entity = establishmentRepository.findById(id);
-        entity.ifPresent(e -> log.info("--- [Service: FindById] Entity ID {} loaded. OperatingHours: {}", id, e.getOperatingHoursString()));
+        entity.ifPresent(e -> log.info("--- [Service: FindById] Entity ID {} loaded. OperatingHours: {}", id,
+                e.getOperatingHoursString()));
         return entity;
     }
 
     /**
      * Получает все заведения, созданные определенным пользователем.
-     * @param userId ID пользователя.
+     * * @param userId ID пользователя.
      * @return Список DTO заведений.
      */
     public List<EstablishmentDisplayDto> findByCreatedUserId(Long userId) {
         List<EstablishmentEntity> userEstablishments = establishmentRepository.findByCreatedUserId(userId);
         return userEstablishments.stream()
-            .map(EstablishmentDisplayDto::fromEntity)
-            .collect(Collectors.toList());
+                .map(EstablishmentDisplayDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
      * Получает неодобренные заведения.
-     * @return Список DTO неодобренных заведений.
+     * * @return Список DTO неодобренных заведений.
      */
     public List<EstablishmentDisplayDto> getPendingEstablishments() {
-        List<EstablishmentEntity> pendingEntities =
-        establishmentRepository.findByStatus(EstablishmentStatus.PENDING_APPROVAL);
+        List<EstablishmentEntity> pendingEntities = establishmentRepository
+                .findByStatus(EstablishmentStatus.PENDING_APPROVAL);
         return pendingEntities.stream()
-            .map(EstablishmentDisplayDto::fromEntity)
-            .collect(Collectors.toList());
+                .map(EstablishmentDisplayDto::fromEntity)
+                .collect(Collectors.toList());
     }
-
 
     // ========================== МЕТОДЫ ПОИСКА ==========================
 
     /**
      * Выполняет поиск заведений по названию/адресу И фильтрует по типу.
-     * @param query Строка поиска.
+     * * @param query Строка поиска.
      * @param types Список типов (в виде строк) для фильтрации.
      * @return Список EstablishmentSearchResultDto.
      */
@@ -104,7 +107,7 @@ public class EstablishmentService {
         if (query != null && query.equalsIgnoreCase("null")) {
             query = null;
         }
-        
+
         // 2. Проверка на пустой запрос (И текст, И фильтры)
         boolean isQueryBlank = (query == null || query.isBlank());
         boolean isTypesEmpty = (types == null || types.isEmpty());
@@ -115,16 +118,16 @@ public class EstablishmentService {
         }
 
         // 3. Конвертация типов из String в Enum
-        List<EstablishmentType> enumTypes = isTypesEmpty ? Collections.emptyList() :
-            types.stream()
-                 .map(EstablishmentType::valueOf) // Преобразуем строку в Enum
-                 .collect(Collectors.toList());
+        @SuppressWarnings("null")
+        List<EstablishmentType> enumTypes = isTypesEmpty ? Collections.emptyList()
+                : types.stream()
+                        .map(EstablishmentType::valueOf) // Преобразуем строку в Enum
+                        .collect(Collectors.toList());
 
         log.info("--- [Service: Search] Executing query: '{}', Types: {}", query, enumTypes);
 
         List<EstablishmentEntity> foundEntities;
 
-        // 4. ⭐ ВЫБОР МЕТОДА РЕПОЗИТОРИЯ
         // Это самый надежный способ обработки динамического списка IN в JPA
         if (enumTypes.isEmpty()) {
             // Если фильтров нет, ищем только по тексту
@@ -135,8 +138,8 @@ public class EstablishmentService {
         }
 
         List<EstablishmentSearchResultDto> dtoList = foundEntities.stream()
-            .map(EstablishmentSearchResultDto::fromEntity)
-            .collect(Collectors.toList());
+                .map(EstablishmentSearchResultDto::fromEntity)
+                .collect(Collectors.toList());
 
         log.info("--- [Service: Search] Found {} results.", dtoList.size());
 
@@ -145,21 +148,28 @@ public class EstablishmentService {
 
     // ========================== МЕТОДЫ ИЗМЕНЕНИЯ (CRUD) ==========================
 
-      /**
-      * Создает новое заведение после проверки на дублирование.
-      * @param request DTO с данными для создания.
-      * @return EstablishmentEntity.
-      * @throws IllegalArgumentException если заведение с таким названием и адресом уже существует.
-      */
-      public EstablishmentEntity createEstablishment(EstablishmentCreationRequest request) {
-        log.info("--- [Service: Create] Received request. Name: {}, Address: {}", request.getName(), request.getAddress());
+    /**
+     * Создает новое заведение после проверки на дублирование.
+     * * @param request DTO с данными для создания.
+     * @return EstablishmentEntity.
+     * @throws IllegalArgumentException если заведение с таким названием и адресом
+     * уже существует.
+     */
+    public EstablishmentEntity createEstablishment(EstablishmentCreationRequest request) {
+        log.info("--- [Service: Create] Received request. Name: {}, Address: {}", request.getName(),
+                request.getAddress());
+        
+        // 1. Проверка дубликатов
         Optional<EstablishmentEntity> existing = establishmentRepository.findByNameAndAddress(
                 request.getName(),
-        request.getAddress()
-        );
+                request.getAddress());
         if (existing.isPresent()) {
             throw new IllegalArgumentException("Заведение с таким названием и адресом уже существует.");
         }
+
+        // 2. Проверка количества фото
+        validatePhotoLimit(request.getPhotoBase64s());
+
         EstablishmentEntity newEstablishmentEntity = new EstablishmentEntity();
         newEstablishmentEntity.setName(request.getName());
         newEstablishmentEntity.setLatitude(request.getLatitude());
@@ -172,6 +182,7 @@ public class EstablishmentService {
         newEstablishmentEntity.setOperatingHoursString(request.getOperatingHoursString());
         newEstablishmentEntity.setStatus(EstablishmentStatus.PENDING_APPROVAL);
         newEstablishmentEntity.setRating(0.0);
+        
         EstablishmentEntity savedEntity = establishmentRepository.save(newEstablishmentEntity);
         log.info("--- [Service: Create] Entity saved successfully with ID: {}", savedEntity.getId());
         return savedEntity;
@@ -179,16 +190,25 @@ public class EstablishmentService {
 
     public EstablishmentEntity updateEstablishment(Long id, EstablishmentUpdateRequest updateRequest) {
         log.info("--- [Service: Update] Starting update for ID: {}", id);
+        
         EstablishmentEntity existing = establishmentRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Заведение с id " + id + " не найдено."));
+                .orElseThrow(() -> new IllegalArgumentException("Заведение с id " + id + " не найдено."));
+
+        // 1. Проверка количества фото перед обновлением
+        validatePhotoLimit(updateRequest.getPhotoBase64s());
+
         existing.setName(updateRequest.getName());
         existing.setDescription(updateRequest.getDescription());
         existing.setAddress(updateRequest.getAddress());
         existing.setLatitude(updateRequest.getLatitude());
         existing.setLongitude(updateRequest.getLongitude());
         existing.setType(updateRequest.getType());
+        
+        // Перезаписываем список фото (клиент присылает полный актуальный список)
         existing.setPhotoBase64s(updateRequest.getPhotoBase64s());
+        
         existing.setOperatingHoursString(updateRequest.getOperatingHoursString());
+        
         EstablishmentEntity updatedEntity = establishmentRepository.save(existing);
         log.info("--- [Service: Update] Entity ID {} updated successfully.", id);
         return updatedEntity;
@@ -196,7 +216,7 @@ public class EstablishmentService {
 
     public EstablishmentEntity updateStatus(Long id, EstablishmentStatus newStatus) {
         EstablishmentEntity existing = establishmentRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Заведение с id " + id + " не найдено."));
+                .orElseThrow(() -> new IllegalArgumentException("Заведение с id " + id + " не найдено."));
         existing.setStatus(newStatus);
         EstablishmentEntity updatedEntity = establishmentRepository.save(existing);
         log.info("--- [Service: Update Status] Entity ID {} status updated to {}.", id, newStatus);
@@ -209,5 +229,18 @@ public class EstablishmentService {
         }
         establishmentRepository.deleteById(id);
         log.info("--- [Service: Delete] Entity ID {} deleted successfully.", id);
+    }
+    
+    // ========================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========================
+    
+    /**
+     * Проверяет, что список фото не превышает установленный лимит.
+     * @param photos Список строк Base64
+     */
+    private void validatePhotoLimit(List<String> photos) {
+        if (photos != null && photos.size() > MAX_PHOTOS_COUNT) {
+            log.warn("--- [Service: Validation] Photo limit exceeded. Count: {}", photos.size());
+            throw new IllegalArgumentException("Превышен лимит фотографий. Максимум: " + MAX_PHOTOS_COUNT);
+        }
     }
 }

@@ -103,13 +103,14 @@ public class EstablishmentController {
 
     // ========================== Обновление заведения ==========================
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateById(@PathVariable Long id, @RequestBody EstablishmentUpdateRequest updateRequest) {
+    public ResponseEntity<?> updateEstablishment(
+            @PathVariable Long id,
+            @RequestBody EstablishmentUpdateRequest updateRequest) {
         try {
-            // ⭐ ДЕЛЕГИРОВАНИЕ СЕРВИСУ
             EstablishmentEntity updatedEntity = establishmentService.updateEstablishment(id, updateRequest);
             return ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(updatedEntity));
         } catch (IllegalArgumentException e) {
-            log.warn("--- [PUT /{} ] Update failed: {}", id, e.getMessage());
+            log.warn("--- [PUT /{}] Update failed: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -118,7 +119,6 @@ public class EstablishmentController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteById(@PathVariable Long id) {
         try {
-            // ⭐ ДЕЛЕГИРОВАНИЕ СЕРВИСУ
             establishmentService.deleteEstablishment(id);
             return ResponseEntity.ok("Заведение успешно удалено");
         } catch (IllegalArgumentException e) {
