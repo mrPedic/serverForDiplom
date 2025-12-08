@@ -82,7 +82,8 @@ public class EstablishmentController {
 
         return entity
             .<ResponseEntity<?>>map(e -> ResponseEntity.ok(EstablishmentDisplayDto.fromEntity(e)))
-            .orElse(ResponseEntity.badRequest().body("Заведения с таким id не существует"));
+            // ✅ ИСПРАВЛЕНИЕ: Возвращаем 404 Not Found, а не 400 Bad Request.
+            .orElse(ResponseEntity.notFound().build()); 
     }
 
     // ========================== Создание заведения ==========================

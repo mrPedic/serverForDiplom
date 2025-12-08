@@ -9,7 +9,7 @@ public class EstablishmentFavoriteDto {
     private String address;
     private Double rating;
     private EstablishmentType type;
-    private String photoBase64; // Главное фото
+    private String photoBase64; 
 
     // Конструктор
     public EstablishmentFavoriteDto(Long id, String name, String address, Double rating, EstablishmentType type, String photoBase64) {

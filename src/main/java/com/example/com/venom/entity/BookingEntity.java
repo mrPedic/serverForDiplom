@@ -17,9 +17,9 @@ import lombok.NoArgsConstructor; // Добавляем конструктор с
 
 @Entity
 @Table(name = "booking")
-@Data // ⭐ Добавляем Lombok, чтобы сгенерировать геттеры/сеттеры/toString
-@NoArgsConstructor // ⭐ Добавляем конструктор без аргументов
-@AllArgsConstructor // ⭐ Опционально: Добавляем конструктор со всеми аргументами
+@Data 
+@NoArgsConstructor 
+@AllArgsConstructor 
 public class BookingEntity {
 
     @Id
