@@ -1,6 +1,7 @@
 package com.example.com.venom.dto;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 import com.example.com.venom.entity.EstablishmentEntity;
@@ -46,7 +47,7 @@ public class EstablishmentDisplayDto {
             entity.getCreatedUserId(), 
             entity.getDateOfCreation(),
             entity.getType(),
-            entity.getPhotoBase64s(),
+            Collections.emptyList(),
             entity.getOperatingHoursString()
         );
     }

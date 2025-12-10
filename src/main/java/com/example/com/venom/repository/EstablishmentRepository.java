@@ -40,5 +40,5 @@ public interface EstablishmentRepository extends JpaRepository<EstablishmentEnti
       @Param("query") String query,
       @Param("types") List<EstablishmentType> types);
 
-      
+  List<EstablishmentEntity> findByTypeIn(List<EstablishmentType> types);
 }
