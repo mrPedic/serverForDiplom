@@ -2,7 +2,7 @@ package com.example.com.venom.dto.forEstablishmentDetailScreen;
 
 import java.time.LocalDate;
 
-import com.example.com.venom.entity.EstablishmentType;
+import com.example.com.venom.enums.EstablishmentType;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.AllArgsConstructor;

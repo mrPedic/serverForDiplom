@@ -24,7 +24,7 @@ import com.example.com.venom.dto.EstablishmentUpdateRequest;
 import com.example.com.venom.dto.forEstablishmentDetailScreen.DescriptionDTO;
 import com.example.com.venom.dto.forEstablishmentDetailScreen.MapDTO;
 import com.example.com.venom.entity.EstablishmentEntity;
-import com.example.com.venom.entity.EstablishmentStatus;
+import com.example.com.venom.enums.EstablishmentStatus;
 import com.example.com.venom.service.EstablishmentService;
 
 import lombok.RequiredArgsConstructor;

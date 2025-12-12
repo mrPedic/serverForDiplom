@@ -2,7 +2,7 @@ package com.example.com.venom.entity;
 
 import java.time.LocalDateTime;
 
-import com.example.com.venom.StatusForBooking;
+import com.example.com.venom.enums.BookingStatus;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -41,7 +41,7 @@ public class BookingEntity {
      * Поле для хранения статуса бронирования.
      */
     @Enumerated(EnumType.STRING)
-    private StatusForBooking status;
+    private BookingStatus status;
 
     // Опционально: поле для заметок или специальных пожеланий клиента
     private String notes;

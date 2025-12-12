@@ -1,6 +1,6 @@
 package com.example.com.venom.dto;
 
-import com.example.com.venom.entity.EstablishmentType;
+import com.example.com.venom.enums.EstablishmentType;
 
 
 public class EstablishmentFavoriteDto {

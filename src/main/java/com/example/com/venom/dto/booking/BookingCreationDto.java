@@ -1,4 +1,4 @@
-package com.example.com.venom.dto;
+package com.example.com.venom.dto.booking;
 
 import java.time.LocalDateTime;
 
@@ -9,6 +9,7 @@ public class BookingCreationDto {
     private Long userId;
     private Long establishmentId;
     private Long tableId;
+    private Long durationMinutes;
     private LocalDateTime startTime;
     private Integer numPeople;
     private String notes;

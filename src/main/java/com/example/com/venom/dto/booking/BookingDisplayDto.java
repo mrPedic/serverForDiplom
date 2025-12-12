@@ -1,4 +1,4 @@
-package com.example.com.venom.dto;
+package com.example.com.venom.dto.booking;
 
 import java.time.LocalDateTime;
 

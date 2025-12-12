@@ -1,7 +1,7 @@
 package com.example.com.venom.dto;
 
 import com.example.com.venom.entity.EstablishmentEntity;
-import com.example.com.venom.entity.EstablishmentType;
+import com.example.com.venom.enums.EstablishmentType;
 
 import lombok.Value;
 

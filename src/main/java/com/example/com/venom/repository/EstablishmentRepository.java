@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.com.venom.entity.EstablishmentEntity;
-import com.example.com.venom.entity.EstablishmentStatus;
-import com.example.com.venom.entity.EstablishmentType;
+import com.example.com.venom.enums.EstablishmentStatus;
+import com.example.com.venom.enums.EstablishmentType;
 
 public interface EstablishmentRepository extends JpaRepository<EstablishmentEntity, Long> {
 

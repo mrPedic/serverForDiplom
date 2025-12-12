@@ -2,8 +2,8 @@ package com.example.com.venom.dto;
 
 import java.util.List;
 
-import com.example.com.venom.entity.EstablishmentStatus;
-import com.example.com.venom.entity.EstablishmentType;
+import com.example.com.venom.enums.EstablishmentStatus;
+import com.example.com.venom.enums.EstablishmentType;
 
 import lombok.Data;
 
