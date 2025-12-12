@@ -3,6 +3,8 @@ package com.example.com.venom.entity;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.example.com.venom.enums.EstablishmentStatus;
+import com.example.com.venom.enums.EstablishmentType;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import jakarta.persistence.CollectionTable;
@@ -46,7 +48,7 @@ public class EstablishmentEntity {
     private EstablishmentStatus status;
 
     @Enumerated(EnumType.STRING)
-    private EstablishmentType type; 
+    private EstablishmentType type;
 
     @Column(name="date")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")

@@ -1,4 +1,4 @@
-package com.example.com.venom.entity;
+package com.example.com.venom.enums;
 
 public enum EstablishmentType {
     Restaurant,

@@ -1,4 +1,4 @@
-package com.example.com.venom.entity;
+package com.example.com.venom.enums;
 
 /**
  * Перечисление для статуса заведения. Должно совпадать с клиентским Enum.

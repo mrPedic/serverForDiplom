@@ -1,12 +1,12 @@
 package com.example.com.venom.dto;
 
 import com.example.com.venom.entity.EstablishmentEntity;
+import com.example.com.venom.enums.EstablishmentType;
 
 import lombok.Value;
 
 /**
  * Облегченный DTO для отображения заведений в результатах поиска.
- * Содержит только id, name, address и rating.
  */
 @Value
 public class EstablishmentSearchResultDto {
@@ -14,6 +14,7 @@ public class EstablishmentSearchResultDto {
     String name;
     String address;
     Double rating;
+    EstablishmentType type;
 
     /**
      * Статический метод для преобразования Entity в DTO.
@@ -23,7 +24,8 @@ public class EstablishmentSearchResultDto {
             entity.getId(),
             entity.getName(),
             entity.getAddress(),
-            entity.getRating()
+            entity.getRating(),
+            entity.getType()
         );
     }
 }

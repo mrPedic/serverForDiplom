@@ -1,10 +1,10 @@
-package com.example.com.venom;
+package com.example.com.venom.enums;
 
 /**
  * Перечисление для статуса бронирования.
  * Оно должно быть определено как отдельный public enum.
  */
-public enum StatusForBooking {
+public enum BookingStatus {
     PENDING,    // Ожидает подтверждения
     CONFIRMED,  // Подтверждено
     CANCELLED,  // Отменено

@@ -21,7 +21,6 @@ public class VenomApplication {
         
     }
 
-    // ⭐ ИЗМЕНЕНИЕ ЗДЕСЬ: Класс запускается только при venom.mode=global
     @Component
     @ConditionalOnProperty(name = "venom.mode", havingValue = "global")
     public static class ServerInfoPrinter implements ApplicationListener<WebServerInitializedEvent> {

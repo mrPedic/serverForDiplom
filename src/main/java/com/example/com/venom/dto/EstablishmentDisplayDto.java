@@ -1,11 +1,12 @@
 package com.example.com.venom.dto;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 import com.example.com.venom.entity.EstablishmentEntity;
-import com.example.com.venom.entity.EstablishmentStatus;
-import com.example.com.venom.entity.EstablishmentType;
+import com.example.com.venom.enums.EstablishmentStatus;
+import com.example.com.venom.enums.EstablishmentType;
 import com.fasterxml.jackson.annotation.JsonFormat; // <-- ИМПОРТ
 
 import lombok.AllArgsConstructor;
@@ -46,7 +47,7 @@ public class EstablishmentDisplayDto {
             entity.getCreatedUserId(), 
             entity.getDateOfCreation(),
             entity.getType(),
-            entity.getPhotoBase64s(),
+            Collections.emptyList(),
             entity.getOperatingHoursString()
         );
     }
