@@ -1,7 +1,7 @@
 package com.example.com.venom.controller;
 
 import com.example.com.venom.dto.EstablishmentFavoriteDto;
-import com.example.com.venom.entity.AccountEntity;
+import com.example.com.venom.entity.UserEntity;
 import com.example.com.venom.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -32,10 +32,10 @@ public class UserController {
 
     // Обновление данных пользователя
     @PutMapping("/me")
-    public ResponseEntity<?> updateMe(@RequestBody AccountEntity accountEntity) {
-        log.info("--- [CONTROLLER] PUT /me: Received id={}", accountEntity.getId());
+    public ResponseEntity<?> updateMe(@RequestBody UserEntity userEntity) {
+        log.info("--- [CONTROLLER] PUT /me: Received id={}", userEntity.getId());
         try {
-            userService.updateUser(accountEntity);
+            userService.updateUser(userEntity);
             return ResponseEntity.ok("Данные успешно обновлены");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -44,10 +44,10 @@ public class UserController {
 
     // Обновление пароля
     @PutMapping("/me/password")
-    public ResponseEntity<?> updateMePassword(@RequestBody AccountEntity accountEntity) {
-        log.info("--- [CONTROLLER] PUT /me/password: Received id={}", accountEntity.getId());
+    public ResponseEntity<?> updateMePassword(@RequestBody UserEntity userEntity) {
+        log.info("--- [CONTROLLER] PUT /me/password: Received id={}", userEntity.getId());
         try {
-            userService.updateUserPassword(accountEntity);
+            userService.updateUserPassword(userEntity);
             return ResponseEntity.ok("Пароль успешно обновлён");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

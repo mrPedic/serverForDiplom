@@ -9,15 +9,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.com.venom.entity.AccountEntity;
-import com.example.com.venom.entity.AccountEntity.Role;
-import com.example.com.venom.repository.AccountRepository;
+import com.example.com.venom.entity.UserEntity;
+import com.example.com.venom.entity.UserEntity.Role;
+import com.example.com.venom.repository.UserRepository;
 
 @RestController
 public class AuthorizationController {
 
     @Autowired
-    private AccountRepository accountRepository;
+    private UserRepository userRepository;
 
     //==================================    Регистрация    ==================================
     @PostMapping("/auth/register")
@@ -26,12 +26,12 @@ public class AuthorizationController {
         String name = request.get("name");
         String password = request.get("password");
 
-        Optional<AccountEntity> existing = accountRepository.findByLogin(login);
+        Optional<UserEntity> existing = userRepository.findByLogin(login);
         if (existing.isPresent()){
             return ResponseEntity.badRequest().body("Пользователь с таким логином уже существует");
             }
-            AccountEntity accountEntity = new AccountEntity( name, login, password, Role.Registered);
-        AccountEntity savedAccount = accountRepository.save(accountEntity);
+            UserEntity userEntity = new UserEntity( name, login, password, Role.Registered);
+        UserEntity savedAccount = userRepository.save(userEntity);
         return ResponseEntity.ok(savedAccount.getId());
     }
 
@@ -41,7 +41,7 @@ public class AuthorizationController {
         String login = request.get("login");
         String password = request.get("password");
 
-        Optional<AccountEntity> userOptional = accountRepository.findByLoginAndPassword(login,password);
+        Optional<UserEntity> userOptional = userRepository.findByLoginAndPassword(login,password);
         if(userOptional.isPresent()){
             return ResponseEntity.ok(userOptional.get());
         }
@@ -52,6 +52,6 @@ public class AuthorizationController {
 
     @PostMapping("/auth/getAllUsers")
     public ResponseEntity<?> getAll() {
-        return ResponseEntity.ok(accountRepository.findAll());
+        return ResponseEntity.ok(userRepository.findAll());
     }
 }

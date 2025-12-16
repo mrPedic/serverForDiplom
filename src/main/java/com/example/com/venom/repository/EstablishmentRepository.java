@@ -41,4 +41,7 @@ public interface EstablishmentRepository extends JpaRepository<EstablishmentEnti
       @Param("types") List<EstablishmentType> types);
 
   List<EstablishmentEntity> findByTypeIn(List<EstablishmentType> types);
+
+  @Query("SELECT e.id FROM EstablishmentEntity e WHERE e.createdUserId = :userId")
+  List<Long> findIdsByCreatedUserId(@Param("userId") Long userId);
 }

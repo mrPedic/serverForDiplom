@@ -36,5 +36,6 @@ public class TableEntity {
 
     // Максимальное количество человек
     @Column(name = "max_capacity", nullable = false)
-    private Integer maxCapacity; 
+    private Integer maxCapacity;
+
 }

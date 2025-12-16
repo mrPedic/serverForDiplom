@@ -82,8 +82,8 @@ public class TableService {
         // List<Long> reservedTableIds = bookingRepository.findReservedTableIds(establishmentId, dateTime);
         
         // return allTables.stream()
-        //     .filter(table -> !reservedTableIds.contains(table.getId()))
-        //     .collect(Collectors.toList());
+        //  .filter(table -> !reservedTableIds.contains(table.getId()))
+        //  .collect(Collectors.toList());
         */
     }
     

@@ -13,4 +13,5 @@ public class BookingCreationDto {
     private LocalDateTime startTime;
     private Integer numPeople;
     private String notes;
+    private String guestPhone;
 }

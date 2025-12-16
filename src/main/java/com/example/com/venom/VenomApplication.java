@@ -2,14 +2,17 @@ package com.example.com.venom;
 
 import java.io.File;
 
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.boot.web.context.WebServerInitializedEvent;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Component;
+
 
 @SpringBootApplication
 @EntityScan("com.example.com.venom.entity")
@@ -18,23 +21,40 @@ public class VenomApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(VenomApplication.class, args);
-        
+    }
+
+    @Bean
+    public CommandLineRunner initData(DataInitializationService dataInitializationService) {
+        return args -> {
+            System.out.println("\n🚀 Начало инициализации тестовых данных...");
+            dataInitializationService.initializeData();
+            System.out.println("✅ Тестовые данные успешно созданы!");
+            System.out.println("   - 100 заведений с меню и столиками");
+            System.out.println("   - 10-15 отзывов на каждое заведение");
+            System.out.println("   - Все отзывы от пользователя с ID=2");
+            System.out.println("   - Два администратора (ID=1 и ID=2)");
+        };
     }
 
     @Component
     @ConditionalOnProperty(name = "venom.mode", havingValue = "global")
-    public static class ServerInfoPrinter implements ApplicationListener<WebServerInitializedEvent> {
-        
-        @Override
-        public void onApplicationEvent(WebServerInitializedEvent event) {
-            try {
-                // Измененный вывод, чтобы было понятно, какой режим
-                System.out.println("\n✅ Сервер запущен в ГЛОБАЛЬНОМ режиме!");
-                System.out.println("Вызов скрипта для настройки ngrok...");
+    public static class ServerInfoPrinter implements ApplicationListener<ApplicationReadyEvent> {
 
-                // 👉 Вызов Python-скрипта
+        private final DataInitializationService dataInitializationService;
+
+        public ServerInfoPrinter(DataInitializationService dataInitializationService) {
+            this.dataInitializationService = dataInitializationService;
+        }
+
+        @Override
+        public void onApplicationEvent(ApplicationReadyEvent event) {
+            try {
+                System.out.println("\n✅ Сервер запущен в ГЛОБАЛЬНОМ режиме!");
+
+                // Вызов Python-скрипта
+                System.out.println("Вызов скрипта для настройки ngrok...");
                 runPythonScript();
-                
+
             } catch (Exception e) {
                 System.err.println("❌ Ошибка при получении информации о сервере: " + e.getMessage());
             }
@@ -42,17 +62,9 @@ public class VenomApplication {
 
         private void runPythonScript() {
             try {
-                // Путь к твоему скрипту (если он в одной папке с jar)
                 ProcessBuilder pb = new ProcessBuilder("python", "update_ngrok_gist.py");
-
-                // 👉 Укажи путь к папке, где лежит скрипт
-                // ОСТОРОЖНО: Это работает, если запускать из IDE. Для jar-файла нужен другой путь.
-                pb.directory(new File("src/main/resources/scripts")); 
-
-                // Наследовать вывод в консоль
+                pb.directory(new File("src/main/resources/scripts"));
                 pb.inheritIO();
-
-                // Запуск
                 Process process = pb.start();
                 int exitCode = process.waitFor();
 
@@ -61,7 +73,6 @@ public class VenomApplication {
                 } else {
                     System.err.println("❌ Python-скрипт завершился с ошибкой. Код: " + exitCode);
                 }
-
             } catch (Exception e) {
                 System.err.println("❌ Ошибка при запуске Python-скрипта: " + e.getMessage());
             }

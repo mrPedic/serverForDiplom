@@ -21,7 +21,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users")
-public class AccountEntity {
+public class UserEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,12 +44,12 @@ public class AccountEntity {
     @Column(name="date")
     private LocalDate dateOfCreation = LocalDate.now();
 
-    public AccountEntity() {
+    public UserEntity() {
         this.name = "Default_Name";
         this.role = Role.UnRegistered;
     }
     
-    public AccountEntity(String name, String login, String password, Role role) {
+    public UserEntity(String name, String login, String password, Role role) {
         this.name = name;
         this.login = login;
         this.password = password;

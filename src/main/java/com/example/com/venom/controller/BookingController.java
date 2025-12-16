@@ -4,19 +4,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.example.com.venom.dto.booking.BookingDisplayDto;
+import com.example.com.venom.dto.booking.OwnerBookingDisplayDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.com.venom.dto.booking.BookingCreationDto;
 import com.example.com.venom.entity.BookingEntity;
@@ -124,4 +118,25 @@ public class BookingController {
         // Возвращаем статус 204 No Content, который Retrofit ожидает для Response<Unit>
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    @PutMapping("/{bookingId}/status")
+    public ResponseEntity<Void> updateBookingStatus(
+            @PathVariable Long bookingId,
+            @RequestParam("status") String status,
+            @RequestParam("ownerId") Long ownerId) {  // ← передаём явно!
+
+        log.info("Изменение статуса брони {} на {} от владельца {}", bookingId, status, ownerId);
+        bookingService.updateBookingStatus(bookingId, status, ownerId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/owner/{ownerId}/pending")
+    public ResponseEntity<List<OwnerBookingDisplayDto>> getPendingBookingsForOwner(
+            @PathVariable Long ownerId) {
+
+        log.info("Запрос pending-броней для владельца {}", ownerId);
+        List<OwnerBookingDisplayDto> bookings = bookingService.getPendingBookingsForOwner(ownerId);
+        return ResponseEntity.ok(bookings);
+    }
+
 }

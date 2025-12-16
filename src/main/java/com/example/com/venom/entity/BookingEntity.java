@@ -4,13 +4,7 @@ import java.time.LocalDateTime;
 
 import com.example.com.venom.enums.BookingStatus;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;          // Добавляем Lombok Data
 import lombok.Data; // Добавляем конструктор без аргументов
 import lombok.NoArgsConstructor; // Добавляем конструктор со всеми аргументами
@@ -36,6 +30,8 @@ public class BookingEntity {
 
     // Фактическое количество человек в брони
     private Integer numPeople;
+    @Column(name = "guest_phone")
+    private String guestPhone;
 
     /**
      * Поле для хранения статуса бронирования.

@@ -3,6 +3,7 @@ package com.example.com.venom.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.com.venom.enums.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,4 +31,12 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
     List<BookingEntity> findByEstablishmentId(Long establishmentId);
 
     List<BookingEntity> findByUserId(Long userId);
+
+    @Query("SELECT b FROM BookingEntity b WHERE b.establishmentId IN :estIds AND b.status = :status")
+    List<BookingEntity> findByEstablishmentIdInAndStatus(
+            @Param("estIds") List<Long> establishmentIds,
+            @Param("status") BookingStatus status
+    );
+
+
 }

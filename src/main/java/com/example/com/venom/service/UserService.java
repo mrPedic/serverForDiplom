@@ -12,9 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.com.venom.dto.EstablishmentFavoriteDto;
-import com.example.com.venom.entity.AccountEntity;
+import com.example.com.venom.entity.UserEntity;
 import com.example.com.venom.entity.EstablishmentEntity;
-import com.example.com.venom.repository.AccountRepository;
+import com.example.com.venom.repository.UserRepository;
 import com.example.com.venom.repository.EstablishmentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -25,13 +25,13 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
-    private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
     private final EstablishmentRepository establishmentRepository;
 
     // Получить свои данные пользователя
-    public Optional<AccountEntity> getUserById(Long id) {
+    public Optional<UserEntity> getUserById(Long id) {
         log.info("--- [SERVICE] getUserById: Received id={}", id);
-        Optional<AccountEntity> user = accountRepository.findById(id);
+        Optional<UserEntity> user = userRepository.findById(id);
         if (user.isPresent()) {
             log.info("--- [SERVICE] getUserById: Found user with id={}", id);
         } else {
@@ -42,32 +42,32 @@ public class UserService {
 
     // Обновить данные пользователя (кроме пароля)
     @Transactional
-    public AccountEntity updateUser(AccountEntity updatedUser) {
+    public UserEntity updateUser(UserEntity updatedUser) {
         log.info("--- [SERVICE] updateUser: Received id={}", updatedUser.getId());
-        AccountEntity existing = accountRepository.findById(updatedUser.getId())
+        UserEntity existing = userRepository.findById(updatedUser.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Пользователя с таким id не существует"));
 
         if (updatedUser.getLogin() != null) existing.setLogin(updatedUser.getLogin());
         if (updatedUser.getRole() != null) existing.setRole(updatedUser.getRole());
         if (updatedUser.getName() != null) existing.setName(updatedUser.getName());
 
-        AccountEntity saved = accountRepository.save(existing);
+        UserEntity saved = userRepository.save(existing);
         log.info("--- [SERVICE] updateUser: Updated user with id={}", saved.getId());
         return saved;
     }
 
     // Обновить пароль пользователя
     @Transactional
-    public AccountEntity updateUserPassword(AccountEntity userWithPassword) {
+    public UserEntity updateUserPassword(UserEntity userWithPassword) {
         log.info("--- [SERVICE] updateUserPassword: Received id={}", userWithPassword.getId());
-        AccountEntity existing = accountRepository.findById(userWithPassword.getId())
+        UserEntity existing = userRepository.findById(userWithPassword.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Пользователя с таким id не существует"));
 
         if (userWithPassword.getPassword() != null) {
             existing.setPassword(userWithPassword.getPassword());  // TODO: Хэшируй пароль!
         }
 
-        AccountEntity saved = accountRepository.save(existing);
+        UserEntity saved = userRepository.save(existing);
         log.info("--- [SERVICE] updateUserPassword: Updated password for user id={}", saved.getId());
         return saved;
     }
@@ -76,10 +76,10 @@ public class UserService {
     @Transactional
     public void deleteUserById(Long id) {
         log.info("--- [SERVICE] deleteUserById: Received id={}", id);
-        if (!accountRepository.existsById(id)) {
+        if (!userRepository.existsById(id)) {
             throw new IllegalArgumentException("Не удалось найти пользователя с таким id");
         }
-        accountRepository.deleteById(id);
+        userRepository.deleteById(id);
         log.info("--- [SERVICE] deleteUserById: Deleted user with id={}", id);
     }
 
@@ -87,7 +87,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<Long> getFavoriteIds(Long userId) {
         log.info("--- [SERVICE] getFavoriteIds: Received userId={}", userId);
-        AccountEntity user = accountRepository.findById(userId)
+        UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
         Set<EstablishmentEntity> favorites = user.getFavorites();
@@ -102,7 +102,7 @@ public class UserService {
     @Transactional
     public void addFavorite(Long userId, Long establishmentId) {
         log.info("--- [SERVICE] addFavorite: Received userId={}, establishmentId={}", userId, establishmentId);
-        AccountEntity user = accountRepository.findById(userId)
+        UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
         EstablishmentEntity establishment = establishmentRepository.findById(establishmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Заведение не найдено"));
@@ -112,7 +112,7 @@ public class UserService {
         }
 
         user.getFavorites().add(establishment);
-        accountRepository.save(user);
+        userRepository.save(user);
         log.info("--- [SERVICE] addFavorite: Added favorite for userId={}, establishmentId={}", userId, establishmentId);
     }
 
@@ -120,7 +120,7 @@ public class UserService {
     @Transactional
     public void removeFavorite(Long userId, Long establishmentId) {
         log.info("--- [SERVICE] removeFavorite: Received userId={}, establishmentId={}", userId, establishmentId);
-        AccountEntity user = accountRepository.findById(userId)
+        UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
         EstablishmentEntity establishment = establishmentRepository.findById(establishmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Заведение не найдено"));
@@ -129,7 +129,7 @@ public class UserService {
             throw new IllegalArgumentException("Заведение не в избранном");
         }
 
-        accountRepository.save(user);
+        userRepository.save(user);
         log.info("--- [SERVICE] removeFavorite: Removed favorite for userId={}, establishmentId={}", userId, establishmentId);
     }
 
@@ -137,7 +137,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<EstablishmentFavoriteDto> getFavoriteListDto(Long userId) {
         log.info("--- [SERVICE] getFavoriteListDto: Received userId={}", userId);
-        AccountEntity user = accountRepository.findById(userId)
+        UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
         Set<EstablishmentEntity> favorites = user.getFavorites();
@@ -164,7 +164,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public boolean isFavorite(Long userId, Long establishmentId) {
         log.info("--- [SERVICE] isFavorite: Received userId={}, establishmentId={}", userId, establishmentId);
-        AccountEntity user = accountRepository.findById(userId)
+        UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
         boolean result = user.getFavorites().stream()
