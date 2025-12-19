@@ -14,7 +14,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Component;
 
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.example.com.venom", "com.example.websocket"})
 @EntityScan("com.example.com.venom.entity")
 @EnableJpaRepositories("com.example.com.venom.repository")
 public class VenomApplication {

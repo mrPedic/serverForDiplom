@@ -20,7 +20,7 @@ public class TestController {
 
     @GetMapping("/")
     public ResponseEntity<String> Default() throws IOException {
-        File htmlFile = new File("C:\\Users\\vladv\\сервер\\venom\\src\\main\\java\\com\\example\\com\\hello.html");
+        File htmlFile = new File("C:\\Users\\vladv\\сервер\\venom\\src\\main\\resources\\static\\hello.html");
         String content = Files.readString(htmlFile.toPath());
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_HTML)
