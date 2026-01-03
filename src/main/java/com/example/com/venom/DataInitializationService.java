@@ -197,54 +197,418 @@ public class DataInitializationService {
             "reviews\\review15.jpg",
     };
 
-    // Названия групп еды
-    private static final String[] FOOD_GROUP_NAMES = {
-            "Салаты", "Супы", "Главные блюда", "Десерты", "Закуски", "Гарниры"
-    };
-
-    // Названия групп напитков
-    private static final String[] DRINK_GROUP_NAMES = {
-            "Холодные напитки", "Горячие напитки", "Алкогольные напитки", "Соки", "Коктейли"
-    };
-
-    // Названия блюд для каждой группы
-    private static final Map<String, List<String>> FOOD_ITEMS = new HashMap<>();
+    // Примеры меню для каждого типа заведения
+    private static final Map<EstablishmentType, Map<String, List<String>>> FOOD_MENU_BY_TYPE = new HashMap<>();
+    private static final Map<EstablishmentType, Map<String, List<String>>> DRINK_MENU_BY_TYPE = new HashMap<>();
 
     static {
-        FOOD_ITEMS.put("Салаты", Arrays.asList("Цезарь", "Греческий", "Оливье", "Крабовый"));
-        FOOD_ITEMS.put("Супы", Arrays.asList("Борщ", "Солянка", "Грибной", "Куриный"));
-        FOOD_ITEMS.put("Главные блюда", Arrays.asList("Стейк", "Рыба на гриле", "Паста", "Плов"));
-        FOOD_ITEMS.put("Десерты", Arrays.asList("Тирамису", "Чизкейк", "Мороженое", "Блинчики"));
-        FOOD_ITEMS.put("Закуски", Arrays.asList("Брускетта", "Начос", "Картофель фри", "Крылышки"));
-        FOOD_ITEMS.put("Гарниры", Arrays.asList("Картофельное пюре", "Овощи на гриле", "Рис", "Гречка"));
+        // Ресторан
+        Map<String, List<String>> restaurantFood = new HashMap<>();
+        restaurantFood.put("Салаты", Arrays.asList("Цезарь с тигровыми креветками", "Теплый салат с уткой", "Салат Нисуаз"));
+        restaurantFood.put("Супы", Arrays.asList("Томатный суп с базиликом", "Луковый суп гратин", "Крем-суп из белых грибов"));
+        restaurantFood.put("Главные блюда", Arrays.asList("Стейк Рибай", "Лосось в медово-соевом соусе", "Утиная грудка с ягодным соусом"));
+        restaurantFood.put("Десерты", Arrays.asList("Тирамису", "Крем-брюле", "Шоколадный фондан"));
+        FOOD_MENU_BY_TYPE.put(EstablishmentType.Restaurant, restaurantFood);
+
+        Map<String, List<String>> restaurantDrinks = new HashMap<>();
+        restaurantDrinks.put("Вино", Arrays.asList("Красное сухое", "Белое полусладкое", "Розовое"));
+        restaurantDrinks.put("Коктейли", Arrays.asList("Мохито", "Негрони", "Апероль Шприц"));
+        restaurantDrinks.put("Безалкогольные", Arrays.asList("Лимонад домашний", "Морс ягодный", "Сок фреш"));
+        DRINK_MENU_BY_TYPE.put(EstablishmentType.Restaurant, restaurantDrinks);
+
+        // Кафе
+        Map<String, List<String>> cafeFood = new HashMap<>();
+        cafeFood.put("Завтраки", Arrays.asList("Сырники со сметаной", "Омлет с ветчиной", "Гранола с йогуртом"));
+        cafeFood.put("Салаты", Arrays.asList("Греческий", "Салат с креветками", "Овощной микс"));
+        cafeFood.put("Основные блюда", Arrays.asList("Паста Карбонара", "Бургер классический", "Куриные крылышки"));
+        cafeFood.put("Десерты", Arrays.asList("Чизкейк", "Панна-котта", "Шоколадный торт"));
+        FOOD_MENU_BY_TYPE.put(EstablishmentType.Cafe, cafeFood);
+
+        Map<String, List<String>> cafeDrinks = new HashMap<>();
+        cafeDrinks.put("Кофе", Arrays.asList("Капучино", "Латте", "Американо"));
+        cafeDrinks.put("Чай", Arrays.asList("Зеленый", "Черный", "Фруктовый"));
+        cafeDrinks.put("Лимонады", Arrays.asList("Мохито безалкогольный", "Ягодный лимонад", "Цитрусовый фреш"));
+        DRINK_MENU_BY_TYPE.put(EstablishmentType.Cafe, cafeDrinks);
+
+        // Кофейня
+        Map<String, List<String>> coffeeFood = new HashMap<>();
+        coffeeFood.put("Выпечка", Arrays.asList("Круассан", "Булочка с корицей", "Пирог яблочный"));
+        coffeeFood.put("Сэндвичи", Arrays.asList("С авокадо", "Клубный", "С ветчиной и сыром"));
+        coffeeFood.put("Десерты", Arrays.asList("Макарун", "Эклер", "Тарталетка с ягодами"));
+        FOOD_MENU_BY_TYPE.put(EstablishmentType.CoffeeHouse, coffeeFood);
+
+        Map<String, List<String>> coffeeDrinks = new HashMap<>();
+        coffeeDrinks.put("Кофе", Arrays.asList("Эспрессо", "Флэт Уайт", "Раф кофе"));
+        coffeeDrinks.put("Альтернатива", Arrays.asList("Какао", "Горячий шоколад", "Масала чай"));
+        coffeeDrinks.put("Холодные напитки", Arrays.asList("Айс латте", "Холодный раф", "Фраппучино"));
+        DRINK_MENU_BY_TYPE.put(EstablishmentType.CoffeeHouse, coffeeDrinks);
+
+        // Пиццерия
+        Map<String, List<String>> pizzaFood = new HashMap<>();
+        pizzaFood.put("Пицца", Arrays.asList("Маргарита", "Пепперони", "Четыре сыра", "Гавайская"));
+        pizzaFood.put("Закуски", Arrays.asList("Чесночные булочки", "Куриные наггетсы", "Картофель фри"));
+        pizzaFood.put("Салаты", Arrays.asList("Цезарь", "Овощной", "С морепродуктами"));
+        FOOD_MENU_BY_TYPE.put(EstablishmentType.Pizzeria, pizzaFood);
+
+        Map<String, List<String>> pizzaDrinks = new HashMap<>();
+        pizzaDrinks.put("Напитки", Arrays.asList("Кола", "Фанта", "Спрайт", "Вода"));
+        pizzaDrinks.put("Пиво", Arrays.asList("Светлое", "Темное", "Пшеничное"));
+        DRINK_MENU_BY_TYPE.put(EstablishmentType.Pizzeria, pizzaDrinks);
+
+        // Суши-бар
+        Map<String, List<String>> sushiFood = new HashMap<>();
+        sushiFood.put("Роллы", Arrays.asList("Филадельфия", "Калифорния", "Дракон", "Темпура"));
+        sushiFood.put("Суши", Arrays.asList("С лососем", "С угрем", "С тунцом"));
+        sushiFood.put("Супы", Arrays.asList("Мисо суп", "Рамен"));
+        sushiFood.put("Закуски", Arrays.asList("Гедза", "Эби суши", "Сяке суши"));
+        FOOD_MENU_BY_TYPE.put(EstablishmentType.SushiBar, sushiFood);
+
+        Map<String, List<String>> sushiDrinks = new HashMap<>();
+        sushiDrinks.put("Напитки", Arrays.asList("Зеленый чай", "Саке", "Японское пиво"));
+        sushiDrinks.put("Соки", Arrays.asList("Апельсиновый", "Ананасовый", "Манговый"));
+        DRINK_MENU_BY_TYPE.put(EstablishmentType.SushiBar, sushiDrinks);
+
+        // Бар/Паб
+        Map<String, List<String>> pubFood = new HashMap<>();
+        pubFood.put("Закуски", Arrays.asList("Крылья BBQ", "Начос", "Картофель с соусами"));
+        pubFood.put("Бургеры", Arrays.asList("Чизбургер", "Бургер с беконом", "Вегетарианский"));
+        pubFood.put("Основные блюда", Arrays.asList("Ребра BBQ", "Стейк", "Рыба с жареным картофелем"));
+        FOOD_MENU_BY_TYPE.put(EstablishmentType.Pub, pubFood);
+        FOOD_MENU_BY_TYPE.put(EstablishmentType.Gastropub, pubFood);
+
+        Map<String, List<String>> pubDrinks = new HashMap<>();
+        pubDrinks.put("Пиво", Arrays.asList("Крафтовое светлое", "Стаут", "Лагер"));
+        pubDrinks.put("Коктейли", Arrays.asList("Маргарита", "Дайкири", "Кровавая Мэри"));
+        pubDrinks.put("Виски", Arrays.asList("Бурбон", "Скотч", "Ирландский"));
+        DRINK_MENU_BY_TYPE.put(EstablishmentType.Pub, pubDrinks);
+        DRINK_MENU_BY_TYPE.put(EstablishmentType.Gastropub, pubDrinks);
+
+        // Общие для остальных типов
+        Map<String, List<String>> commonFood = new HashMap<>();
+        commonFood.put("Основные блюда", Arrays.asList("Курица гриль", "Рыба на пару", "Паста"));
+        commonFood.put("Салаты", Arrays.asList("Овощной", "С курицей", "Греческий"));
+        commonFood.put("Десерты", Arrays.asList("Мороженое", "Фруктовая тарелка", "Шоколадный мусс"));
+
+        Map<String, List<String>> commonDrinks = new HashMap<>();
+        commonDrinks.put("Напитки", Arrays.asList("Вода", "Сок", "Лимонад"));
+        commonDrinks.put("Чай/Кофе", Arrays.asList("Чай черный", "Кофе", "Какао"));
+
+        for (EstablishmentType type : EstablishmentType.values()) {
+            if (!FOOD_MENU_BY_TYPE.containsKey(type)) {
+                FOOD_MENU_BY_TYPE.put(type, commonFood);
+            }
+            if (!DRINK_MENU_BY_TYPE.containsKey(type)) {
+                DRINK_MENU_BY_TYPE.put(type, commonDrinks);
+            }
+        }
     }
 
-    // Описания блюд
-    private static final Map<String, String> FOOD_DESCRIPTIONS = new HashMap<>();
+    // Отзывы для каждого типа заведения (по 25 вариантов)
+    private static final Map<EstablishmentType, List<String>> REVIEWS_BY_TYPE = new HashMap<>();
 
     static {
-        FOOD_DESCRIPTIONS.put("Цезарь", "Классический салат с курицей, салатом Айсберг, сухариками и соусом Цезарь");
-        FOOD_DESCRIPTIONS.put("Греческий", "Салат с помидорами, огурцами, оливками, сыром фета и оливковым маслом");
-        FOOD_DESCRIPTIONS.put("Стейк", "Сочный стейк из говядины с овощами гриль");
-        FOOD_DESCRIPTIONS.put("Тирамису", "Итальянский десерт с кофе, маскарпоне и какао");
-        FOOD_DESCRIPTIONS.put("Борщ", "Традиционный украинский суп со свеклой и сметаной");
-        FOOD_DESCRIPTIONS.put("Рыба на гриле", "Свежая рыба, приготовленная на гриле с лимоном и травами");
-        FOOD_DESCRIPTIONS.put("Паста", "Итальянская паста с соусом на выбор");
-        FOOD_DESCRIPTIONS.put("Чизкейк", "Нежный чизкейк с ягодным соусом");
+        // Рестораны
+        REVIEWS_BY_TYPE.put(EstablishmentType.Restaurant, Arrays.asList(
+                "Отличный ресторан! Еда была восхитительной, особенно стейк.",
+                "Обслуживание на высшем уровне. Шеф-повар - мастер своего дела.",
+                "Уютная атмосфера, идеально для романтического ужина.",
+                "Вино было подобрано идеально к блюдам. Сомелье - профессионал.",
+                "Цены немного высокие, но качество того стоит.",
+                "Замечательное место для особых случаев. Рекомендую!",
+                "Блюда были свежими и вкусными. Порции достаточно большие.",
+                "Интерьер очень элегантный, чувствуется европейский стиль.",
+                "Обслуживание быстрое, персонал внимательный и вежливый.",
+                "Попробовали дегустационное меню - все было бесподобно!",
+                "Лучший ресторан в городе! Обязательно вернемся.",
+                "Музыка создавала приятную атмосферу, не слишком громко.",
+                "Детское меню было разнообразным, дети остались довольны.",
+                "Бронирование столика прошло без проблем.",
+                "Особая благодарность официанту за отличные рекомендации.",
+                "Чистота и порядок во всем зале.",
+                "Идеальное сочетание цены и качества.",
+                "Коктейли были приготовлены идеально, с креативной подачей.",
+                "Огромный выбор вин, есть на любой вкус.",
+                "Шеф-повар лично вышел к гостям - приятный жест.",
+                "Вегетарианские блюда были не менее вкусными, чем мясные.",
+                "Запах свежей выпечки с утра просто волшебный!",
+                "Бизнес-ланч - отличное предложение по цене.",
+                "Панорамные окна с видом на город - прекрасно.",
+                "Десерты были настоящим произведением искусства."
+        ));
+
+        // Кафе
+        REVIEWS_BY_TYPE.put(EstablishmentType.Cafe, Arrays.asList(
+                "Уютное кафе с домашней атмосферой. Кофе просто великолепный!",
+                "Идеальное место для встречи с друзьями.",
+                "Быстрое обслуживание, несмотря на то что было много посетителей.",
+                "Выпечка свежая и очень вкусная, особенно круассаны.",
+                "Бесплатный Wi-Fi и удобные розетки - отлично для работы.",
+                "Цены демократичные, порции большие.",
+                "Детская комната чистая и безопасная.",
+                "Очень понравился ягодный лимонад - освежающий и не слишком сладкий.",
+                "Персонал всегда улыбается и готов помочь.",
+                "Интерьер современный и стильный.",
+                "Завтраки просто объедение! Сырники нежные и воздушные.",
+                "Можно расплатиться картой - удобно.",
+                "Есть веранда, летом приятно посидеть на свежем воздухе.",
+                "Книжный уголок с интересной подборкой литературы.",
+                "Музыка подобрана отлично, создает расслабляющую атмосферу.",
+                "Веганские опции в меню - приятный сюрприз.",
+                "Горячий шоколад был густым и насыщенным.",
+                "Салаты свежие, овощи хрустящие.",
+                "Были с собакой - персонал был очень дружелюбен к питомцу.",
+                "Кондиционер работает отлично, в жару было комфортно.",
+                "Чайная карта разнообразная, много сортов.",
+                "Можно заказать еду с собой, упаковка качественная.",
+                "Часто проходят тематические вечера - интересно.",
+                "Чистые туалеты - показатель заботы о гостях.",
+                "В целом очень приятное место, рекомендую!"
+        ));
+
+        // Кофейни
+        REVIEWS_BY_TYPE.put(EstablishmentType.CoffeeHouse, Arrays.asList(
+                "Лучший кофе в городе! Бариста знают свое дело.",
+                "Аромат свежемолотого кофе сводит с ума с порога.",
+                "Уютные кресла и приглушенный свет - идеально для работы.",
+                "Раф кофе был идеальной консистенции, не слишком сладкий.",
+                "Бесплатный Wi-Fi работает стабильно и быстро.",
+                "Выбор альтернативного молока (миндальное, овсяное).",
+                "Круассаны свежие, с хрустящей корочкой.",
+                "Тихое место, можно сосредоточиться на работе.",
+                "Макаруны просто тают во рту!",
+                "Персонал всегда дает рекомендации по выбору кофе.",
+                "Чистота и порядок, приятно находиться.",
+                "Можно купить зерна кофе на развес.",
+                "Несколько вариантов сахара и сиропов на выбор.",
+                "Температура в помещении всегда комфортная.",
+                "Быстрое обслуживание даже в час пик.",
+                "Есть книги и журналы для чтения.",
+                "Фраппучино был охлаждающим в жаркий день.",
+                "Понравилась подача - всегда с печенькой к кофе.",
+                "Можно оплатить картой или телефоном.",
+                "Вкусный и недорогой перекус.",
+                "Доступны корпоративные скидки.",
+                "Вежливый и внимательный персонал.",
+                "Летняя терраса с видом на парк.",
+                "Разные форматы чашек на выбор.",
+                "В целом отличное место для кофейных гурманов!"
+        ));
+
+        // Пиццерии
+        REVIEWS_BY_TYPE.put(EstablishmentType.Pizzeria, Arrays.asList(
+                "Пицца с тонким тестом и хрустящей корочкой - идеально!",
+                "Начинки свежие и в большом количестве.",
+                "Чесночный соус просто божественный.",
+                "Быстрая доставка, пицца приехала горячей.",
+                "Цены очень приемлемые для такой качественной пиццы.",
+                "Тесто нежное, не слишком жирное.",
+                "Можно выбрать несколько видов начинки в одной пицце.",
+                "Сыр тянется, как на картинке!",
+                "Чистый и просторный зал.",
+                "Детская пицца - отличная идея для семейного ужина.",
+                "Пепперони была достаточно острой, как я люблю.",
+                "Готовят на открытой кухне - видно процесс приготовления.",
+                "Наггетсы хрустящие снаружи и сочные внутри.",
+                "Большой выбор напитков к пицце.",
+                "Акции и скидки для постоянных клиентов.",
+                "Можно заказать пиццу с собой, упаковка сохраняет тепло.",
+                "Тесто для пиццы готовят прямо при вас.",
+                "Вегетарианская пицца была не менее вкусной.",
+                "Картофель фри хрустящий и не пережаренный.",
+                "Персонал дружелюбный и вежливый.",
+                "Летом можно посидеть на открытой веранде.",
+                "Быстрое обслуживание, не пришлось долго ждать.",
+                "Пицца четыре сыра - рай для любителей сыра.",
+                "Чистые столовые приборы и посуда.",
+                "В целом отличная пиццерия, рекомендую всем!"
+        ));
+
+        // Суши-бары
+        REVIEWS_BY_TYPE.put(EstablishmentType.SushiBar, Arrays.asList(
+                "Свежие и вкусные роллы, рыба качественная.",
+                "Филадельфия была нежной и сочной.",
+                "Большой выбор роллов и сетов.",
+                "Соусы к роллам очень вкусные, особенно унаги.",
+                "Доставка быстрая, суши приехали свежими.",
+                "Цены соответствуют качеству.",
+                "Мисо суп был насыщенным и ароматным.",
+                "Гедза хрустящие с сочной начинкой.",
+                "Имбирь и васаби свежие, не пересушенные.",
+                "Подача красивая, видно что повара стараются.",
+                "Лосось был свежим и нежным.",
+                "Можно заказать роллы на вынос в красивой упаковке.",
+                "Чай зеленый подается бесплатно.",
+                "Персонал помогает с выбором, если не определились.",
+                "Чистота и порядок в зале.",
+                "Сеты выгоднее, чем заказывать по отдельности.",
+                "Темпура хрустящая и не жирная.",
+                "Есть острые роллы для любителей.",
+                "Детские порции - удобно для семейного ужина.",
+                "Соя хорошего качества, не слишком соленая.",
+                "Быстрое приготовление, не пришлось долго ждать.",
+                "Фирменные роллы - стоит попробовать.",
+                "Вежливое обслуживание.",
+                "Свежие овощи в роллах хрустящие.",
+                "В целом отличный суши-бар, буду заказывать еще!"
+        ));
+
+        // Бары/Пабы
+        REVIEWS_BY_TYPE.put(EstablishmentType.Pub, Arrays.asList(
+                "Отличный выбор крафтового пива, много сортов.",
+                "Крылья BBQ просто объедение, хорошо промаринованные.",
+                "Атмосфера расслабляющая, идеально для вечера с друзьями.",
+                "Музыка не слишком громкая, можно разговаривать.",
+                "Бармены знают свое дело, коктейли приготовлены идеально.",
+                "Большие экраны для просмотра спортивных матчей.",
+                "Начос с обильным соусом и начинкой.",
+                "Цены демократичные для такого заведения.",
+                "Бургеры сочные, булочки свежие.",
+                "Виски карта обширная, можно попробовать разные сорта.",
+                "Персонал дружелюбный и общительный.",
+                "Чистота в зале и за барной стойкой.",
+                "Есть настольные игры для компании.",
+                "Темное пиво было насыщенным и вкусным.",
+                "Ребра BBQ нежные и хорошо прожаренные.",
+                "Коктейли креативные с интересными названиями.",
+                "Можно расплатиться картой.",
+                "Летом работает открытая терраса.",
+                "Хорошая вентиляция, не накуренный воздух.",
+                "Стейк был приготовлен точно как заказывал.",
+                "Часто проходят тематические вечера.",
+                "Доступны закуски к пиву.",
+                "Быстрое обслуживание даже в пятницу вечером.",
+                "Чистые туалеты.",
+                "В целом отличный паб, рекомендую любителям пива!"
+        ));
+
+        REVIEWS_BY_TYPE.put(EstablishmentType.Gastropub, REVIEWS_BY_TYPE.get(EstablishmentType.Pub));
+
+        // Общие отзывы для остальных типов
+        List<String> commonReviews = Arrays.asList(
+                "Уютное место с приятной атмосферой.",
+                "Обслуживание быстрое и вежливое.",
+                "Цены соответствуют качеству.",
+                "Чистота и порядок в зале.",
+                "Вкусная еда, порции большие.",
+                "Персонал внимательный и дружелюбный.",
+                "Комфортная температура в помещении.",
+                "Удобное расположение.",
+                "Приятная музыка, не слишком громкая.",
+                "Можно расплатиться картой.",
+                "Есть детское меню.",
+                "Быстрая доставка.",
+                "Свежие ингредиенты.",
+                "Красивая подача блюд.",
+                "Удобное время работы.",
+                "Бесплатный Wi-Fi.",
+                "Чистые туалеты.",
+                "Летняя терраса.",
+                "Есть парковка рядом.",
+                "Акции и скидки для постоянных клиентов.",
+                "Вежливый персонал.",
+                "Комфортные места для сидения.",
+                "Хорошая вентиляция.",
+                "Тихое место для встреч.",
+                "Рекомендую к посещению!"
+        );
+
+        for (EstablishmentType type : EstablishmentType.values()) {
+            if (!REVIEWS_BY_TYPE.containsKey(type)) {
+                REVIEWS_BY_TYPE.put(type, commonReviews);
+            }
+        }
     }
 
-    // Названия напитков для каждой группы
-    private static final Map<String, List<String>> DRINK_ITEMS = new HashMap<>();
+    // Описания заведений по типам
+    private static final Map<EstablishmentType, List<String>> ESTABLISHMENT_DESCRIPTIONS_BY_TYPE = new HashMap<>();
 
     static {
-        DRINK_ITEMS.put("Холодные напитки", Arrays.asList("Кола", "Фанта", "Спрайт", "Вода"));
-        DRINK_ITEMS.put("Горячие напитки", Arrays.asList("Кофе", "Чай", "Какао", "Глинтвейн"));
-        DRINK_ITEMS.put("Алкогольные напитки", Arrays.asList("Пиво", "Вино", "Виски", "Водка"));
-        DRINK_ITEMS.put("Соки", Arrays.asList("Апельсиновый сок", "Яблочный сок", "Томатный сок", "Виноградный сок"));
-        DRINK_ITEMS.put("Коктейли", Arrays.asList("Мохито", "Маргарита", "Пина Колада", "Дайкири"));
+        // Рестораны
+        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.Restaurant, Arrays.asList(
+                "Премиум ресторан для особых случаев с авторской кухней",
+                "Элегантный ресторан с изысканным интерьером и винной картой",
+                "Ресторан высокой кухни с шеф-поваром международного класса",
+                "Традиционный ресторан с национальной кухней и живой музыкой",
+                "Современный ресторан с фьюжн-кухней и панорамным видом"
+        ));
+
+        // Кафе
+        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.Cafe, Arrays.asList(
+                "Уютное кафе с домашней атмосферой и свежей выпечкой",
+                "Современное кафе с бесплатным Wi-Fi и розетками для работы",
+                "Семейное кафе с детской комнатой и специальным меню для детей",
+                "Кафе в стиле лофт с индустриальным интерьером и арт-выставками",
+                "Ретро-кафе с винтажной мебелью и классической музыкой"
+        ));
+
+        // Бары и пабы
+        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.Pub, Arrays.asList(
+                "Аутентичный ирландский паб с живой музыкой и крафтовым пивом",
+                "Бар с широким выбором коктейлей и уютной атмосферой",
+                "Спорт-бар с большими экранами для трансляций матчей",
+                "Бар-лаунж с диджейскими сетами и танцполом",
+                "Подвальный бар в индустриальном стиле с металлической музыкой"
+        ));
+
+        // Кофейни
+        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.CoffeeHouse, Arrays.asList(
+                "Кофейня с собственной обжаркой зерен и профессиональными бариста",
+                "Минималистичная кофейня с акцентом на качество кофе",
+                "Кофейня-библиотека с тихой атмосферой для работы и чтения",
+                "Японская кофейня с традиционными методами заваривания",
+                "Кофейня с веганскими десертами и альтернативным молоком"
+        ));
+
+        // Пиццерии
+        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.Pizzeria, Arrays.asList(
+                "Неаполитанская пиццерия с дровяной печью и итальянскими продуктами",
+                "Семейная пиццерия с детской площадкой и игровой зоной",
+                "Пиццерия-буфет с неограниченными добавками пиццы",
+                "Пиццерия с авторскими рецептами и необычными начинками",
+                "Пиццерия быстрого питания с доставкой за 30 минут"
+        ));
+
+        // Суши-бары
+        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.SushiBar, Arrays.asList(
+                "Суши-бар с японским шеф-поваром и свежими морепродуктами",
+                "Суши-ресторан с конвейерной лентой и цветовой системой ценообразования",
+                "Суши-бар с фьюжн-роллами и азиатской кухней",
+                "Минималистичный суши-бар с акцентом на традиционные техники",
+                "Суши-бар с открытой кухней, где можно наблюдать за приготовлением"
+        ));
+
+        // Общие описания для остальных типов
+        List<String> commonDescriptions = Arrays.asList(
+                "Уютное место с теплой атмосферой и внимательным обслуживанием",
+                "Современное заведение с демократичными ценами и быстрым обслуживанием",
+                "Семейное заведение с меню для всех возрастов и детской зоной",
+                "Заведение в уникальном стиле с авторским подходом к кухне",
+                "Место для встреч с друзьями в расслабленной атмосфере"
+        );
+
+        for (EstablishmentType type : EstablishmentType.values()) {
+            if (!ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.containsKey(type)) {
+                ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(type, commonDescriptions);
+            }
+        }
     }
 
-    // Названия заведений по типам
+    // Размеры опций для напитков (в мл)
+    private static final int[] DRINK_SIZES = {250, 330, 500, 1000};
+
+    // Количество мест для столиков
+    private static final int[] TABLE_CAPACITIES = {2, 4, 6};
+
+    // Количество столиков каждого типа
+    private static final int[] TABLE_COUNTS = {2, 5, 1}; // 2 двухместных, 5 четырехместных, 1 шестиместный
+
+    // Типы заведений
+    private static final EstablishmentType[] ESTABLISHMENT_TYPES = EstablishmentType.values();
+
+    // Кэш для Base64 изображений
+    private final Map<String, String> imageBase64Cache = new HashMap<>();
+
+    // Названия заведений по типам (из старого кода, оставляем)
     private static final Map<EstablishmentType, List<String>> ESTABLISHMENT_NAMES_BY_TYPE = new HashMap<>();
 
     static {
@@ -340,95 +704,6 @@ public class DataInitializationService {
             }
         }
     }
-
-    // Описания заведений по типам
-    private static final Map<EstablishmentType, List<String>> ESTABLISHMENT_DESCRIPTIONS_BY_TYPE = new HashMap<>();
-
-    static {
-        // Рестораны
-        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.Restaurant, Arrays.asList(
-                "Премиум ресторан для особых случаев с авторской кухней",
-                "Элегантный ресторан с изысканным интерьером и винной картой",
-                "Ресторан высокой кухни с шеф-поваром международного класса",
-                "Традиционный ресторан с национальной кухней и живой музыкой",
-                "Современный ресторан с фьюжн-кухней и панорамным видом"
-        ));
-
-        // Кафе
-        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.Cafe, Arrays.asList(
-                "Уютное кафе с домашней атмосферой и свежей выпечкой",
-                "Современное кафе с бесплатным Wi-Fi и розетками для работы",
-                "Семейное кафе с детской комнатой и специальным меню для детей",
-                "Кафе в стиле лофт с индустриальным интерьером и арт-выставками",
-                "Ретро-кафе с винтажной мебелью и классической музыкой"
-        ));
-
-        // Бары и пабы
-        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.Pub, Arrays.asList(
-                "Аутентичный ирландский паб с живой музыкой и крафтовым пивом",
-                "Бар с широким выбором коктейлей и уютной атмосферой",
-                "Спорт-бар с большими экранами для трансляций матчей",
-                "Бар-лаунж с диджейскими сетами и танцполом",
-                "Подвальный бар в индустриальном стиле с металлической музыкой"
-        ));
-
-        // Кофейни
-        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.CoffeeHouse, Arrays.asList(
-                "Кофейня с собственной обжаркой зерен и профессиональными бариста",
-                "Минималистичная кофейня с акцентом на качество кофе",
-                "Кофейня-библиотека с тихой атмосферой для работы и чтения",
-                "Японская кофейня с традиционными методами заваривания",
-                "Кофейня с веганскими десертами и альтернативным молоком"
-        ));
-
-        // Пиццерии
-        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.Pizzeria, Arrays.asList(
-                "Неаполитанская пиццерия с дровяной печью и итальянскими продуктами",
-                "Семейная пиццерия с детской площадкой и игровой зоной",
-                "Пиццерия-буфет с неограниченными добавками пиццы",
-                "Пиццерия с авторскими рецептами и необычными начинками",
-                "Пиццерия быстрого питания с доставкой за 30 минут"
-        ));
-
-        // Суши-бары
-        ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(EstablishmentType.SushiBar, Arrays.asList(
-                "Суши-бар с японским шеф-поваром и свежими морепродуктами",
-                "Суши-ресторан с конвейерной лентой и цветовой системой ценообразования",
-                "Суши-бар с фьюжн-роллами и азиатской кухней",
-                "Минималистичный суши-бар с акцентом на традиционные техники",
-                "Суши-бар с открытой кухней, где можно наблюдать за приготовлением"
-        ));
-
-        // Общие описания для остальных типов
-        List<String> commonDescriptions = Arrays.asList(
-                "Уютное место с теплой атмосферой и внимательным обслуживанием",
-                "Современное заведение с демократичными ценами и быстрым обслуживанием",
-                "Семейное заведение с меню для всех возрастов и детской зоной",
-                "Заведение в уникальном стиле с авторским подходом к кухне",
-                "Место для встреч с друзьями в расслабленной атмосфере"
-        );
-
-        for (EstablishmentType type : EstablishmentType.values()) {
-            if (!ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.containsKey(type)) {
-                ESTABLISHMENT_DESCRIPTIONS_BY_TYPE.put(type, commonDescriptions);
-            }
-        }
-    }
-
-    // Размеры опций для напитков (в мл)
-    private static final int[] DRINK_SIZES = {250, 330, 500, 1000};
-
-    // Количество мест для столиков
-    private static final int[] TABLE_CAPACITIES = {2, 4, 6};
-
-    // Количество столиков каждого типа
-    private static final int[] TABLE_COUNTS = {2, 5, 1}; // 2 двухместных, 5 четырехместных, 1 шестиместный
-
-    // Типы заведений
-    private static final EstablishmentType[] ESTABLISHMENT_TYPES = EstablishmentType.values();
-
-    // Кэш для Base64 изображений
-    private final Map<String, String> imageBase64Cache = new HashMap<>();
 
     /**
      * Загружает изображение и конвертирует в Base64 строку (чистую, без префиксов)
@@ -673,58 +948,68 @@ public class DataInitializationService {
 
     private void createMenuForEstablishment(EstablishmentEntity establishment, Random random) {
         Long establishmentId = establishment.getId();
+        EstablishmentType type = establishment.getType();
 
-        // Определяем, кофейня это или нет
-        boolean isCafe = establishment.getType() == EstablishmentType.CoffeeHouse;
+        // Получаем меню для данного типа заведения
+        Map<String, List<String>> foodMenu = FOOD_MENU_BY_TYPE.get(type);
+        Map<String, List<String>> drinkMenu = DRINK_MENU_BY_TYPE.get(type);
 
-        // Создаем группы еды (3-4 группы)
-        int foodGroupsCount = isCafe ? 3 : 3 + random.nextInt(2); // 3 или 4
+        if (foodMenu == null || drinkMenu == null) {
+            // Если меню для данного типа нет, используем общее
+            foodMenu = FOOD_MENU_BY_TYPE.get(EstablishmentType.Restaurant);
+            drinkMenu = DRINK_MENU_BY_TYPE.get(EstablishmentType.Restaurant);
+        }
+
+        // Создаем группы еды из меню
         List<FoodGroupEntity> foodGroups = new ArrayList<>();
+        int foodGroupIndex = 0;
 
-        for (int i = 0; i < foodGroupsCount; i++) {
+        for (Map.Entry<String, List<String>> entry : foodMenu.entrySet()) {
+            if (foodGroupIndex >= 4) break; // Ограничиваем 4 группами
+
             FoodGroupEntity foodGroup = new FoodGroupEntity();
             foodGroup.setEstablishmentId(establishmentId);
-            foodGroup.setName(FOOD_GROUP_NAMES[i]);
+            foodGroup.setName(entry.getKey());
             foodGroup = foodGroupRepository.save(foodGroup);
             foodGroups.add(foodGroup);
 
-            // Создаем блюда в группе (3-4 блюда)
-            createFoodItemsForGroup(foodGroup, random);
+            // Создаем блюда в группе
+            createFoodItemsForGroup(foodGroup, entry.getValue(), random);
+            foodGroupIndex++;
         }
 
-        // Создаем группы напитков (3-4 группы)
-        int drinkGroupsCount = isCafe ? 4 : 3 + random.nextInt(2); // Кофейни больше напитков, 3 или 4 у остальных
+        // Создаем группы напитков из меню
         List<DrinksGroupEntity> drinkGroups = new ArrayList<>();
+        int drinkGroupIndex = 0;
 
-        for (int i = 0; i < drinkGroupsCount; i++) {
+        for (Map.Entry<String, List<String>> entry : drinkMenu.entrySet()) {
+            if (drinkGroupIndex >= 3) break; // Ограничиваем 3 группами
+
             DrinksGroupEntity drinksGroup = new DrinksGroupEntity();
             drinksGroup.setEstablishmentId(establishmentId);
-            drinksGroup.setName(DRINK_GROUP_NAMES[i]);
+            drinksGroup.setName(entry.getKey());
             drinksGroup = drinksGroupRepository.save(drinksGroup);
             drinkGroups.add(drinksGroup);
 
-            // Создаем напитки в группе (3-4 напитка)
-            createDrinkItemsForGroup(drinksGroup, random);
+            // Создаем напитки в группе
+            createDrinkItemsForGroup(drinksGroup, entry.getValue(), random);
+            drinkGroupIndex++;
         }
     }
 
-    private void createFoodItemsForGroup(FoodGroupEntity foodGroup, Random random) {
-        String groupName = foodGroup.getName();
-        List<String> items = FOOD_ITEMS.getOrDefault(groupName, Arrays.asList("Блюдо 1", "Блюдо 2", "Блюдо 3"));
-
-        // Создаем копию списка и перемешиваем для случайного выбора
-        List<String> shuffledItems = new ArrayList<>(items);
+    private void createFoodItemsForGroup(FoodGroupEntity foodGroup, List<String> foodItems, Random random) {
+        // Перемешиваем список блюд для разнообразия
+        List<String> shuffledItems = new ArrayList<>(foodItems);
         Collections.shuffle(shuffledItems, random);
 
         // Создаем 3-4 блюда в группе
         int itemsCount = 3 + random.nextInt(2); // 3 или 4
 
-        for (int i = 0; i < itemsCount; i++) {
+        for (int i = 0; i < itemsCount && i < shuffledItems.size(); i++) {
             FoodEntity food = new FoodEntity();
             food.setFoodGroupId(foodGroup.getId());
 
-            // Берем название из перемешанного списка
-            String itemName = shuffledItems.get(i % shuffledItems.size());
+            String itemName = shuffledItems.get(i);
             food.setName(itemName);
 
             // Пищевая ценность
@@ -734,10 +1019,7 @@ public class DataInitializationService {
             food.setProteinPer100g(round(5 + random.nextDouble() * 30, 1)); // 5-35 г белков
 
             // Описание
-            food.setIngredients(FOOD_DESCRIPTIONS.getOrDefault(
-                    itemName,
-                    "Свежие ингредиенты, приготовленные с любовью"
-            ));
+            food.setIngredients("Свежие ингредиенты, приготовленные с любовью");
 
             // Цена - округляем до 2 знаков после запятой
             food.setCost(round(5 + random.nextDouble() * 20, 2)); // 5-25 рублей
@@ -754,23 +1036,19 @@ public class DataInitializationService {
         }
     }
 
-    private void createDrinkItemsForGroup(DrinksGroupEntity drinksGroup, Random random) {
-        String groupName = drinksGroup.getName();
-        List<String> items = DRINK_ITEMS.getOrDefault(groupName, Arrays.asList("Напиток 1", "Напиток 2", "Напиток 3"));
-
-        // Создаем копию списка и перемешиваем для случайного выбора
-        List<String> shuffledItems = new ArrayList<>(items);
+    private void createDrinkItemsForGroup(DrinksGroupEntity drinksGroup, List<String> drinkItems, Random random) {
+        // Перемешиваем список напитков для разнообразия
+        List<String> shuffledItems = new ArrayList<>(drinkItems);
         Collections.shuffle(shuffledItems, random);
 
         // Создаем 3-4 напитка в группе
         int itemsCount = 3 + random.nextInt(2); // 3 или 4
 
-        for (int i = 0; i < itemsCount; i++) {
+        for (int i = 0; i < itemsCount && i < shuffledItems.size(); i++) {
             DrinkEntity drink = new DrinkEntity();
             drink.setDrinkGroupId(drinksGroup.getId());
 
-            // Берем название из перемешанного списка
-            String itemName = shuffledItems.get(i % shuffledItems.size());
+            String itemName = shuffledItems.get(i);
             drink.setName(itemName);
 
             // Пищевая ценность (для напитков обычно меньше)
@@ -843,40 +1121,32 @@ public class DataInitializationService {
         // ID пользователя для отзывов (второй администратор)
         Long reviewerUserId = 2L;
 
-        // Тексты отзывов
-        String[] reviewTexts = {
-                "Очень понравилось! Приятная атмосфера и вежливый персонал.",
-                "Неплохое место, но есть куда расти. Еда была нормальной.",
-                "Отличное заведение! Обязательно вернусь с друзьями.",
-                "Средненько, ничего особенного. Цены немного завышены.",
-                "Восхитительно! Лучшее место в городе, рекомендую всем!",
-                "Не ожидал такого качества за такие деньги. Приятно удивлен!",
-                "Было неплохо, но обслуживание могло быть и лучше.",
-                "Атмосфера просто супер! Идеальное место для вечера с друзьями.",
-                "Еда была вкусной, но порции могли бы быть больше.",
-                "Уютное место с интересным интерьером. Порадовало меню.",
-                "Советую попробовать их фирменные блюда - это нечто!",
-                "Цены соответствуют качеству. Будем приходить еще.",
-                "Не самый лучший опыт, но и не худший. Попробуйте сами.",
-                "Персонал очень внимательный, все понравилось!",
-                "Неплохой выбор напитков и закусок. Вечер удался!"
-        };
-
-        // Рейтинги с распределением (больше хороших отзывов)
-        float[] possibleRatings = {4.5f, 5.0f, 4.0f, 3.5f, 4.0f, 4.5f, 3.0f, 5.0f, 4.0f, 3.5f, 2.5f, 1.5f};
-
         int totalReviews = 0;
 
         for (EstablishmentEntity establishment : establishments) {
             // Для каждого заведения создаем 10-15 отзывов
             int reviewsForThisEstablishment = 10 + random.nextInt(6); // 10-15
 
+            // Получаем отзывы для данного типа заведения
+            List<String> reviewsForType = REVIEWS_BY_TYPE.get(establishment.getType());
+            if (reviewsForType == null) {
+                reviewsForType = REVIEWS_BY_TYPE.get(EstablishmentType.Restaurant); // По умолчанию
+            }
+
+            // Перемешиваем отзывы
+            List<String> shuffledReviews = new ArrayList<>(reviewsForType);
+            Collections.shuffle(shuffledReviews, random);
+
             for (int i = 0; i < reviewsForThisEstablishment; i++) {
                 ReviewEntity review = new ReviewEntity();
                 review.setEstablishmentId(establishment.getId());
                 review.setCreatedUserId(reviewerUserId);
-                review.setRating(possibleRatings[random.nextInt(possibleRatings.length)]);
-                review.setReviewText(reviewTexts[random.nextInt(reviewTexts.length)]);
+
+                // Рейтинг 3.5-5.0, больше хороших оценок
+                review.setRating(3.5f + random.nextFloat() * 1.5f);
+
+                // Берем отзыв из списка (циклически)
+                review.setReviewText(shuffledReviews.get(i % shuffledReviews.size()));
 
                 // Дата отзыва - случайная дата в последние 30 дней
                 review.setDateOfCreation(LocalDateTime.now().minusDays(random.nextInt(30)));
@@ -950,20 +1220,5 @@ public class DataInitializationService {
         }
 
         System.out.println("✅ Обновлены рейтинги для " + updatedCount + " заведений");
-    }
-
-    /**
-     * Создает простой SVG с заданным цветом
-     */
-    private String createColorSvg(String color) {
-        String svg = String.format(
-                "<svg xmlns='http://www.w3.org/2000/svg' width='200' height='150'>" +
-                        "<rect width='200' height='150' fill='%s'/>" +
-                        "<text x='100' y='75' font-family='Arial' font-size='14' fill='white' " +
-                        "text-anchor='middle' dominant-baseline='middle'>Review Photo</text>" +
-                        "</svg>",
-                color
-        );
-        return "data:image/svg+xml;base64," + Base64.getEncoder().encodeToString(svg.getBytes());
     }
 }
