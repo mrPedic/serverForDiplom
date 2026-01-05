@@ -7,6 +7,10 @@ import java.util.stream.Collectors;
 import com.example.com.venom.dto.booking.OwnerBookingDisplayDto;
 import com.example.com.venom.entity.UserEntity;
 import com.example.com.venom.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,10 +32,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class BookingService {
 
+    private static final Logger log = LoggerFactory.getLogger(BookingService.class);
+
     private final BookingRepository bookingRepository;
     private final TableRepository tableRepository;
     private final EstablishmentRepository establishmentRepository;
-    private final UserRepository userRepository; // нужен только для имени
+    private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
+    private final WebSocketNotificationService webSocketNotificationService; // 🔥 ИСПОЛЬЗУЕМ Kotlin-сервис
 
     @Transactional
     public BookingEntity createBooking(BookingCreationDto dto) {
@@ -65,13 +73,92 @@ public class BookingService {
         booking.setNumPeople(dto.getNumPeople());
         booking.setNotes(dto.getNotes());
         booking.setGuestPhone(dto.getGuestPhone());
-        booking.setStatus(BookingStatus.PENDING); // Важно!
+        booking.setStatus(BookingStatus.PENDING);
 
-        return bookingRepository.save(booking);
+        BookingEntity savedBooking = bookingRepository.save(booking);
+
+        // 🔥 ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ ЧЕРЕЗ WEBSOCKET
+        sendBookingNotification(savedBooking, table);
+
+        return savedBooking;
+    }
+
+    // 🔥 НОВЫЙ МЕТОД: Отправка уведомления о новой брони
+    private void sendBookingNotification(BookingEntity booking, TableEntity table) {
+        try {
+            EstablishmentEntity establishment = establishmentRepository.findById(booking.getEstablishmentId())
+                    .orElse(null);
+
+            log.info("🔍 Finding owner for establishment: {}", booking.getEstablishmentId());
+
+            Long ownerId = null;
+            if (establishment != null) {
+                ownerId = establishment.getCreatedUserId();
+                log.info("🔍 Found owner ID: {} for establishment: {}",
+                        ownerId, establishment.getName());
+            } else {
+                log.warn("⚠️ Establishment not found: {}", booking.getEstablishmentId());
+            }
+
+            UserEntity user = userRepository.findById(booking.getUserId())
+                    .orElse(null);
+
+            String establishmentName = "Неизвестное заведение";
+            String ownerName = "Неизвестный владелец";
+
+            if (establishment != null) {
+                ownerId = establishment.getCreatedUserId();
+                establishmentName = establishment.getName();
+
+                // Получаем имя владельца
+                UserEntity owner = userRepository.findById(ownerId).orElse(null);
+                if (owner != null) {
+                    ownerName = owner.getName();
+                }
+            }
+
+            String userName = user != null ? user.getName() : "Гость";
+            String tableName = table != null ? table.getName() : "Неизвестный стол";
+
+            // Формируем JSON уведомления с помощью Jackson ObjectMapper
+            ObjectNode notification = objectMapper.createObjectNode();
+            notification.put("type", "NEW_BOOKING");
+
+            ObjectNode data = objectMapper.createObjectNode();
+            data.put("bookingId", booking.getId());
+            data.put("establishmentId", booking.getEstablishmentId());
+            data.put("establishmentName", establishmentName);
+            data.put("ownerId", ownerId != null ? ownerId : 0);
+            data.put("ownerName", ownerName);
+            data.put("userName", userName);
+            data.put("userPhone", booking.getGuestPhone() != null ? booking.getGuestPhone() : "");
+            data.put("startTime", booking.getStartTime().toString());
+            data.put("numPeople", booking.getNumPeople());
+            data.put("tableName", tableName);
+
+            notification.set("data", data);
+
+            // 🔥 ОТПРАВЛЯЕМ НА КАНАЛ ВЛАДЕЛЬЦА (если нашли)
+            if (ownerId != null) {
+                String channel = "user_" + ownerId;
+                String notificationJson = objectMapper.writeValueAsString(notification);
+
+                // Используем сервис для отправки уведомлений через WebSocket
+                int sentCount = webSocketNotificationService.broadcastToChannel(channel, notificationJson);
+
+                log.info("✅ Отправлено WebSocket уведомление о новой брони ID {} на канал владельца {} (user_{}), отправлено: {}",
+                        booking.getId(), ownerName, ownerId, sentCount);
+            } else {
+                log.warn("⚠️ Не найден владелец заведения {} для отправки уведомления", booking.getEstablishmentId());
+            }
+
+        } catch (Exception e) {
+            log.error("❌ Ошибка отправки WebSocket уведомления: {}", e.getMessage(), e);
+        }
     }
 
     public List<TableEntity> getAvailableTables(Long establishmentId, LocalDateTime requestedTime) {
-        LocalDateTime checkEndTime = requestedTime.plusHours(2); // или plusMinutes(dto.getDurationMinutes())
+        LocalDateTime checkEndTime = requestedTime.plusHours(2);
 
         List<Long> reservedTableIds = bookingRepository.findReservedTableIds(
                 establishmentId, requestedTime, checkEndTime
@@ -166,7 +253,7 @@ public class BookingService {
                 .establishmentName(est != null ? est.getName() : "—")
                 .userName(user != null ? user.getName() : "Гость")
                 .guestPhone(b.getGuestPhone())
-                .tableName(table != null ? table.getName() : "—")  // ← вот так просто!
+                .tableName(table != null ? table.getName() : "—")
                 .numberOfGuests(b.getNumPeople())
                 .startTime(b.getStartTime())
                 .endTime(b.getEndTime())

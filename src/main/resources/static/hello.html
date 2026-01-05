@@ -225,6 +225,12 @@
             border-radius: 8px;
             border: 1px solid rgba(255,255,255,0.08);
             background: #121631;
+            transition: background .2s, color .2s;
+        }
+
+        .try:hover {
+            background: #1a1f3f;
+            color: var(--text);
         }
 
         footer {
@@ -239,155 +245,315 @@
             header { flex-direction: column; align-items: flex-start; }
             nav { width: 100%; justify-content: flex-start; }
         }
+
+        .websocket-panel {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(124, 92, 255, 0.08);
+            border: 1px solid rgba(124, 92, 255, 0.2);
+            border-radius: 8px;
+        }
+
+        .websocket-panel h3 {
+            margin: 0 0 12px;
+            font-size: 16px;
+            color: #cbbcff;
+        }
+
+        .websocket-panel p {
+            margin: 0 0 12px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .code-block {
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 12px 0;
+            overflow-x: auto;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .mini-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .mini-stat {
+            text-align: center;
+            padding: 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .mini-stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .mini-stat-label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="brand">
-                <div class="logo"></div>
-                <div>Venom Server</div>
-            </div>
-            <nav>
-                <a class="pill" href="#features">Features</a>
-                <a class="pill" href="#api">API</a>
-                <a class="pill" href="#about">About</a>
-            </nav>
-        </header>
+<div class="container">
+    <header>
+        <div class="brand">
+            <div class="logo"></div>
+            <div>Venom Server</div>
+        </div>
+        <nav>
+            <a class="pill" href="#features">Features</a>
+            <a class="pill" href="#api">API</a>
+            <a class="pill" href="#websocket">WebSocket</a>
+            <a class="pill" href="#about">About</a>
+        </nav>
+    </header>
 
-        <section class="hero">
-            <div class="card">
-                <span class="badge">Java • Spring Boot • PostgreSQL</span>
-                <h1>Venom Restaurant Booking API</h1>
-                <p class="subtitle">REST API для системы бронирования столиков в заведениях. Управление ресторанами, меню, бронированиями и отзывами. Полностью функциональный backend с 40 эндпоинтами.</p>
-                <div class="actions">
-                    <a class="btn" href="/establishments/getAll" target="_blank" rel="noopener">Все заведения</a>
-                    <a class="btn secondary" href="/test/ping" target="_blank" rel="noopener">Health Check</a>
-                </div>
-
-                <div id="features" class="grid">
-                    <div class="tile">
-                        <h3>🏢 Заведения</h3>
-                        <p>Создание, управление и поиск ресторанов с поддержкой статусов и геолокации.</p>
-                    </div>
-                    <div class="tile">
-                        <h3>📅 Бронирования</h3>
-                        <p>Система бронирования столиков с проверкой доступности и управлением расписанием.</p>
-                    </div>
-                    <div class="tile">
-                        <h3>🍽️ Меню</h3>
-                        <p>Полноценное управление меню: группы блюд и напитков, цены, опции.</p>
-                    </div>
-                    <div class="tile">
-                        <h3>⭐ Отзывы</h3>
-                        <p>Система отзывов с автоматическим пересчетом рейтинга заведений.</p>
-                    </div>
-                    <div class="tile">
-                        <h3>👥 Пользователи</h3>
-                        <p>Регистрация, авторизация и управление профилями пользователей.</p>
-                    </div>
-                    <div class="tile">
-                        <h3>🪑 Столики</h3>
-                        <p>Управление столиками заведений с указанием вместимости и характеристик.</p>
-                    </div>
-                </div>
+    <section class="hero">
+        <div class="card">
+            <span class="badge">Java • Spring Boot • PostgreSQL • WebSocket</span>
+            <h1>Venom Restaurant Booking API</h1>
+            <p class="subtitle">REST API для системы бронирования столиков в заведениях. Управление ресторанами, меню, бронированиями и отзывами. Полностью функциональный backend с 40+ эндпоинтами и WebSocket уведомлениями.</p>
+            <div class="actions">
+                <a class="btn" href="/establishments/getAll" target="_blank" rel="noopener">Все заведения</a>
+                <a class="btn secondary" href="/test/ping" target="_blank" rel="noopener">Health Check</a>
+                <a class="btn secondary" href="/api/websocket/stats" target="_blank" rel="noopener">WebSocket Stats</a>
             </div>
 
-            <div id="api" class="card">
-                <h2 style="margin: 0 0 8px;">API Overview</h2>
-                <p class="subtitle" style="margin: 0 0 16px;">Всего <strong style="color: var(--accent);">40 эндпоинтов</strong> в 8 контроллерах</p>
-                
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
-                    <div class="tile" style="padding: 12px;">
-                        <h3 style="margin: 0 0 4px; font-size: 14px;">Authorization</h3>
-                        <p style="margin: 0; font-size: 12px;">3 эндпоинта</p>
+            <div id="features" class="grid">
+                <div class="tile">
+                    <h3>🏢 Заведения</h3>
+                    <p>Создание, управление и поиск ресторанов с поддержкой статусов и геолокации.</p>
+                </div>
+                <div class="tile">
+                    <h3>📅 Бронирования</h3>
+                    <p>Система бронирования столиков с проверкой доступности и управлением расписанием.</p>
+                </div>
+                <div class="tile">
+                    <h3>🍽️ Меню</h3>
+                    <p>Полноценное управление меню: группы блюд и напитков, цены, опции.</p>
+                </div>
+                <div class="tile">
+                    <h3>⭐ Отзывы</h3>
+                    <p>Система отзывов с автоматическим пересчетом рейтинга заведений.</p>
+                </div>
+                <div class="tile">
+                    <h3>👥 Пользователи</h3>
+                    <p>Регистрация, авторизация и управление профилями пользователей.</p>
+                </div>
+                <div class="tile">
+                    <h3>🪑 Столики</h3>
+                    <p>Управление столиками заведений с указанием вместимости и характеристик.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="margin: 0 0 16px;">API Overview</h2>
+            <p class="subtitle" style="margin: 0 0 16px;">Всего <strong style="color: var(--accent);">40+ эндпоинтов</strong> в 8 контроллерах</p>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+                <div class="tile" style="padding: 12px;">
+                    <h3 style="margin: 0 0 4px; font-size: 14px;">Authorization</h3>
+                    <p style="margin: 0; font-size: 12px;">3 эндпоинта</p>
+                </div>
+                <div class="tile" style="padding: 12px;">
+                    <h3 style="margin: 0 0 4px; font-size: 14px;">Establishments</h3>
+                    <p style="margin: 0; font-size: 12px;">10 эндпоинтов</p>
+                </div>
+                <div class="tile" style="padding: 12px;">
+                    <h3 style="margin: 0 0 4px; font-size: 14px;">Bookings</h3>
+                    <p style="margin: 0; font-size: 12px;">4 эндпоинта</p>
+                </div>
+                <div class="tile" style="padding: 12px;">
+                    <h3 style="margin: 0 0 4px; font-size: 14px;">Menu</h3>
+                    <p style="margin: 0; font-size: 12px;">11 эндпоинтов</p>
+                </div>
+                <div class="tile" style="padding: 12px;">
+                    <h3 style="margin: 0 0 4px; font-size: 14px;">Reviews</h3>
+                    <p style="margin: 0; font-size: 12px;">3 эндпоинта</p>
+                </div>
+                <div class="tile" style="padding: 12px;">
+                    <h3 style="margin: 0 0 4px; font-size: 14px;">Tables</h3>
+                    <p style="margin: 0; font-size: 12px;">3 эндпоинта</p>
+                </div>
+            </div>
+
+            <h3 style="margin: 16px 0 10px; font-size: 16px;">Популярные эндпоинты</h3>
+            <div class="endpoints">
+                <div class="endpoint">
+                    <div class="method post">POST</div>
+                    <code>/auth/register</code>
+                    <span style="color: var(--muted); font-size: 12px;">Регистрация</span>
+                </div>
+                <div class="endpoint">
+                    <div class="method post">POST</div>
+                    <code>/auth/login</code>
+                    <span style="color: var(--muted); font-size: 12px;">Авторизация</span>
+                </div>
+                <div class="endpoint">
+                    <div class="method get">GET</div>
+                    <code>/establishments/getAll</code>
+                    <a class="try" href="/establishments/getAll" target="_blank" rel="noopener">Try</a>
+                </div>
+                <div class="endpoint">
+                    <div class="method get">GET</div>
+                    <code>/establishments/markers</code>
+                    <a class="try" href="/establishments/markers" target="_blank" rel="noopener">Try</a>
+                </div>
+                <div class="endpoint">
+                    <div class="method get">GET</div>
+                    <code>/establishments/{id}</code>
+                    <a class="try" href="/establishments/1" target="_blank" rel="noopener">Try</a>
+                </div>
+                <div class="endpoint">
+                    <div class="method get">GET</div>
+                    <code>/menu/establishment/{id}</code>
+                    <a class="try" href="/menu/establishment/1" target="_blank" rel="noopener">Try</a>
+                </div>
+                <div class="endpoint">
+                    <div class="method post">POST</div>
+                    <code>/bookings</code>
+                    <span style="color: var(--muted); font-size: 12px;">Создать бронь</span>
+                </div>
+                <div class="endpoint">
+                    <div class="method get">GET</div>
+                    <code>/reviews/establishment/{id}</code>
+                    <a class="try" href="/reviews/establishment/1" target="_blank" rel="noopener">Try</a>
+                </div>
+                <div class="endpoint">
+                    <div class="method get">GET</div>
+                    <code>/tables/establishment/{id}</code>
+                    <a class="try" href="/tables/establishment/1" target="_blank" rel="noopener">Try</a>
+                </div>
+                <div class="endpoint">
+                    <div class="method get">GET</div>
+                    <code>/test/ping</code>
+                    <a class="try" href="/test/ping" target="_blank" rel="noopener">Try</a>
+                </div>
+            </div>
+
+            <!-- WebSocket Section -->
+            <div id="websocket" class="websocket-panel">
+                <h3>📡 WebSocket Notifications</h3>
+                <p>Real-time WebSocket соединения для уведомлений и live обновлений</p>
+
+                <div class="mini-stats">
+                    <div class="mini-stat">
+                        <div class="mini-stat-value" id="wsConnections">0</div>
+                        <div class="mini-stat-label">Connections</div>
                     </div>
-                    <div class="tile" style="padding: 12px;">
-                        <h3 style="margin: 0 0 4px; font-size: 14px;">Establishments</h3>
-                        <p style="margin: 0; font-size: 12px;">10 эндпоинтов</p>
+                    <div class="mini-stat">
+                        <div class="mini-stat-value" id="wsUsers">0</div>
+                        <div class="mini-stat-label">Active Users</div>
                     </div>
-                    <div class="tile" style="padding: 12px;">
-                        <h3 style="margin: 0 0 4px; font-size: 14px;">Bookings</h3>
-                        <p style="margin: 0; font-size: 12px;">4 эндпоинта</p>
-                    </div>
-                    <div class="tile" style="padding: 12px;">
-                        <h3 style="margin: 0 0 4px; font-size: 14px;">Menu</h3>
-                        <p style="margin: 0; font-size: 12px;">11 эндпоинтов</p>
-                    </div>
-                    <div class="tile" style="padding: 12px;">
-                        <h3 style="margin: 0 0 4px; font-size: 14px;">Reviews</h3>
-                        <p style="margin: 0; font-size: 12px;">3 эндпоинта</p>
-                    </div>
-                    <div class="tile" style="padding: 12px;">
-                        <h3 style="margin: 0 0 4px; font-size: 14px;">Tables</h3>
-                        <p style="margin: 0; font-size: 12px;">3 эндпоинта</p>
+                    <div class="mini-stat">
+                        <div class="mini-stat-value" id="wsChannels">0</div>
+                        <div class="mini-stat-label">Channels</div>
                     </div>
                 </div>
 
-                <h3 style="margin: 16px 0 10px; font-size: 16px;">Популярные эндпоинты</h3>
-                <div class="endpoints">
-                    <div class="endpoint">
-                        <div class="method post">POST</div>
-                        <code>/auth/register</code>
-                        <span style="color: var(--muted); font-size: 12px;">Регистрация</span>
-                    </div>
-                    <div class="endpoint">
-                        <div class="method post">POST</div>
-                        <code>/auth/login</code>
-                        <span style="color: var(--muted); font-size: 12px;">Авторизация</span>
-                    </div>
-                    <div class="endpoint">
-                        <div class="method get">GET</div>
-                        <code>/establishments/getAll</code>
-                        <a class="try" href="/establishments/getAll" target="_blank" rel="noopener">Try</a>
-                    </div>
-                    <div class="endpoint">
-                        <div class="method get">GET</div>
-                        <code>/establishments/markers</code>
-                        <a class="try" href="/establishments/markers" target="_blank" rel="noopener">Try</a>
-                    </div>
-                    <div class="endpoint">
-                        <div class="method get">GET</div>
-                        <code>/establishments/{id}</code>
-                        <a class="try" href="/establishments/1" target="_blank" rel="noopener">Try</a>
-                    </div>
-                    <div class="endpoint">
-                        <div class="method get">GET</div>
-                        <code>/menu/establishment/{id}</code>
-                        <a class="try" href="/menu/establishment/1" target="_blank" rel="noopener">Try</a>
-                    </div>
-                    <div class="endpoint">
-                        <div class="method post">POST</div>
-                        <code>/bookings</code>
-                        <span style="color: var(--muted); font-size: 12px;">Создать бронь</span>
-                    </div>
-                    <div class="endpoint">
-                        <div class="method get">GET</div>
-                        <code>/reviews/establishment/{id}</code>
-                        <a class="try" href="/reviews/establishment/1" target="_blank" rel="noopener">Try</a>
-                    </div>
-                    <div class="endpoint">
-                        <div class="method get">GET</div>
-                        <code>/tables/establishment/{id}</code>
-                        <a class="try" href="/tables/establishment/1" target="_blank" rel="noopener">Try</a>
-                    </div>
-                    <div class="endpoint">
-                        <div class="method get">GET</div>
-                        <code>/test/ping</code>
-                        <a class="try" href="/test/ping" target="_blank" rel="noopener">Try</a>
+                <div class="code-block">
+                    ws://localhost:8080/ws/notifications?userId=YOUR_ID&token=YOUR_TOKEN
+                </div>
+
+                <div class="actions" style="margin-top: 12px;">
+                    <a class="btn" href="/test_ws.html" target="_blank" rel="noopener" style="padding: 10px 16px; font-size: 14px;">
+                        Test WebSocket
+                    </a>
+                    <a class="btn secondary" href="/api/websocket/stats" target="_blank" rel="noopener" style="padding: 10px 16px; font-size: 14px;">
+                        Live Stats
+                    </a>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <h4 style="margin: 0 0 8px; font-size: 14px;">WebSocket Endpoints:</h4>
+                    <div class="endpoints" style="grid-template-columns: 1fr; gap: 8px;">
+                        <div class="endpoint" style="padding: 8px 10px;">
+                            <div class="method get" style="font-size: 11px;">GET</div>
+                            <code style="font-size: 11px;">/api/websocket/stats</code>
+                            <a class="try" href="/api/websocket/stats" target="_blank" rel="noopener" style="font-size: 11px; padding: 4px 8px;">Stats</a>
+                        </div>
+                        <div class="endpoint" style="padding: 8px 10px;">
+                            <div class="method post" style="font-size: 11px;">POST</div>
+                            <code style="font-size: 11px;">/api/websocket/send-to-user/{id}</code>
+                            <span style="color: var(--muted); font-size: 10px;">Send notification</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <footer id="about" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.06);">
-            <p style="margin: 0 0 8px; color: var(--muted); text-align: center; font-size: 13px;">
-                Venom Restaurant Booking API • Spring Boot 3.5.0 • Java 21 • PostgreSQL
-            </p>
-            <p style="margin: 0; color: var(--muted); text-align: center; font-size: 12px; opacity: 0.7;">
-                Система управления заведениями, бронированиями и отзывами
-            </p>
-        </footer>
-    </div>
+    <footer id="about" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.06);">
+        <p style="margin: 0 0 8px; color: var(--muted); text-align: center; font-size: 13px;">
+            Venom Restaurant Booking API • Spring Boot 3.5.0 • Java 21 • PostgreSQL • WebSocket
+        </p>
+        <p style="margin: 0; color: var(--muted); text-align: center; font-size: 12px; opacity: 0.7;">
+            Система управления заведениями, бронированиями и отзывами с real-time уведомлениями
+        </p>
+    </footer>
+</div>
+
+<script>
+    // Function to fetch WebSocket stats and update the UI
+    async function updateWebSocketStats() {
+        try {
+            const response = await fetch('/api/websocket/stats');
+            if (response.ok) {
+                const stats = await response.json();
+
+                // Update stats display
+                document.getElementById('wsConnections').textContent = stats.totalConnections || 0;
+                document.getElementById('wsUsers').textContent = stats.totalUsers || 0;
+                document.getElementById('wsChannels').textContent = stats.totalChannels || 0;
+
+                // Update page title with connection count
+                const connectionCount = stats.totalConnections || 0;
+                if (connectionCount > 0) {
+                    document.title = `Venom Server (${connectionCount} ws)`;
+                } else {
+                    document.title = 'Venom Server';
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching WebSocket stats:', error);
+        }
+    }
+
+    // Initial update
+    updateWebSocketStats();
+
+    // Update every 10 seconds
+    setInterval(updateWebSocketStats, 10000);
+
+    // Add click handler for WebSocket test button
+    document.addEventListener('DOMContentLoaded', function() {
+        const wsTestBtn = document.querySelector('a[href="/test_ws.html"]');
+        if (wsTestBtn) {
+            wsTestBtn.addEventListener('click', function(e) {
+                // Open in new tab
+                window.open('/test_ws.html', '_blank');
+            });
+        }
+
+        // Update all "Try" links to open in new tab
+        document.querySelectorAll('.try').forEach(link => {
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener');
+        });
+    });
+</script>
 </body>
 </html>
