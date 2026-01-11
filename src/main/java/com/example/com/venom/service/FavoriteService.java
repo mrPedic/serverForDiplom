@@ -4,7 +4,7 @@ package com.example.com.venom.service;
 
 import java.util.List;
 
-import com.example.com.venom.dto.EstablishmentDisplayDto;
+import com.example.com.venom.dto.establishment.EstablishmentDisplayDto;
 
 
 public interface FavoriteService {

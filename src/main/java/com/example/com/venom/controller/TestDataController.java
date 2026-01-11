@@ -1,7 +1,7 @@
 // file: TestDataController.java
 package com.example.com.venom.controller;
 
-import com.example.com.venom.DataInitializationService;
+import com.example.com.venom.data.DataInitializationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

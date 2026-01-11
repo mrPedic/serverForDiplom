@@ -176,18 +176,59 @@ public class BookingService {
                 .collect(Collectors.toList());
     }
 
+    // Исправленный метод cancelBooking из BookingService.java
+// (добавлена отправка уведомления владельцу после отмены, проверка времени до старта,
+//  и исправлена логика статуса: REJECTED вместо CANCELLED для владельца, но для пользователя - CANCELLED)
     @Transactional
-    public void cancelBooking(Long bookingId) {
+    public void cancelBooking(Long bookingId, Long userId) {
         BookingEntity booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Бронирование не найдено"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Бронь не найдена"));
 
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Бронирование уже отменено");
+        if (!booking.getUserId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Вы не можете отменить чужую бронь");
+        }
+
+        if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Нельзя отменить бронь с таким статусом");
+        }
+
+        // Дополнительная проверка: нельзя отменить менее чем за 30 мин до старта
+        if (booking.getStartTime().isBefore(LocalDateTime.now().plusMinutes(30))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Нельзя отменить бронь менее чем за 30 минут до начала");
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
+
+        // Отправка уведомления владельцу о отмене
+        EstablishmentEntity est = establishmentRepository.findById(booking.getEstablishmentId())
+                .orElse(null);
+        if (est != null) {
+            Long ownerId = est.getCreatedUserId();
+            String channel = "user_" + ownerId;
+
+            ObjectNode notification = objectMapper.createObjectNode();
+            notification.put("id", booking.getId().toString());
+            notification.put("type", "booking_cancelled");
+            notification.put("title", "Отмена брони");
+            notification.put("message", "Пользователь отменил бронь");
+            notification.put("timestamp", System.currentTimeMillis());
+
+            ObjectNode data = objectMapper.createObjectNode();
+            data.put("bookingId", booking.getId());
+            data.put("establishmentId", booking.getEstablishmentId());
+            data.put("userId", userId);
+
+            notification.set("data", data);
+
+            try {
+                String notificationJson = objectMapper.writeValueAsString(notification);
+                webSocketNotificationService.broadcastToChannel(channel, notificationJson);
+                log.info("Уведомление об отмене брони отправлено владельцу {}", ownerId);
+            } catch (Exception e) {
+                log.error("Ошибка отправки уведомления об отмене: {}", e.getMessage(), e);
+            }
+        }
     }
 
     private BookingDisplayDto toDisplayDto(BookingEntity b) {
@@ -221,7 +262,7 @@ public class BookingService {
     }
 
     @Transactional
-    public void updateBookingStatus(Long bookingId, String statusStr, Long ownerId) {
+    public BookingEntity updateBookingStatus(Long bookingId, String statusStr, Long ownerId) {
         BookingStatus status = BookingStatus.valueOf(statusStr.toUpperCase());
 
         BookingEntity booking = bookingRepository.findById(bookingId)
@@ -239,7 +280,7 @@ public class BookingService {
         }
 
         booking.setStatus(status);
-        bookingRepository.save(booking);
+        return bookingRepository.save(booking);
     }
 
     private OwnerBookingDisplayDto toOwnerDisplayDto(BookingEntity b) {
@@ -259,5 +300,67 @@ public class BookingService {
                 .endTime(b.getEndTime())
                 .status(b.getStatus().name())
                 .build();
+    }
+
+    // Метод getApprovedBookingsForOwner из BookingService.java
+    public List<OwnerBookingDisplayDto> getApprovedBookingsForOwner(Long ownerId, Long establishmentId) {
+        List<Long> establishmentIds;
+        if (establishmentId != null) {
+            // Проверяем, что владелец имеет доступ к этому заведению
+            EstablishmentEntity est = establishmentRepository.findById(establishmentId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Заведение не найдено"));
+            if (!est.getCreatedUserId().equals(ownerId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Не вы владелец этого заведения");
+            }
+            establishmentIds = List.of(establishmentId);
+        } else {
+            // Все заведения владельца
+            establishmentIds = establishmentRepository.findByCreatedUserId(ownerId)
+                    .stream()
+                    .map(EstablishmentEntity::getId)
+                    .collect(Collectors.toList());
+        }
+
+        return bookingRepository.findByEstablishmentIdInAndStatus(establishmentIds, BookingStatus.CONFIRMED)
+                .stream()
+                .map(this::toOwnerDisplayDto)
+                .collect(Collectors.toList());
+    }
+
+    public void notifyUserAboutStatusChange(BookingEntity booking, String statusStr) {
+        BookingStatus newStatus = BookingStatus.valueOf(statusStr.toUpperCase());
+        try {
+            EstablishmentEntity est = establishmentRepository.findById(booking.getEstablishmentId())
+                    .orElseThrow(() -> new RuntimeException("Establishment not found"));
+
+            TableEntity table = tableRepository.findById(booking.getTableId()).orElse(null);
+
+            UserEntity user = userRepository.findById(booking.getUserId()).orElse(null);
+
+            ObjectNode notification = objectMapper.createObjectNode();
+            notification.put("type", "booking_status_changed");
+
+            ObjectNode data = objectMapper.createObjectNode();
+            data.put("bookingId", booking.getId());
+            data.put("establishmentId", est.getId());
+            data.put("establishmentName", est.getName());  // Добавляем название заведения
+            data.put("newStatus", newStatus.name());
+            data.put("startTime", booking.getStartTime().toString());
+            data.put("userName", user != null ? user.getName() : "Гость");
+            data.put("tableName", table != null ? table.getName() : "Не указан");
+
+            notification.set("data", data);
+
+            String channel = "user_" + booking.getUserId();  // Уведомление пользователю (гостю)
+            String notificationJson = objectMapper.writeValueAsString(notification);
+
+            int sentCount = webSocketNotificationService.broadcastToChannel(channel, notificationJson);
+
+            log.info("✅ Отправлено уведомление о смене статуса брони ID {} пользователю {} (статус: {}), отправлено: {}",
+                    booking.getId(), booking.getUserId(), newStatus, sentCount);
+
+        } catch (Exception e) {
+            log.error("❌ Ошибка отправки уведомления о статусе: {}", e.getMessage(), e);
+        }
     }
 }

@@ -14,5 +14,5 @@ public abstract class MenuItemDto {
     private Double carbohydratesPer100g;
     private Double proteinPer100g;
     private String ingredients;
-    private String photoBase64; 
+    private String photoBase64;
 }

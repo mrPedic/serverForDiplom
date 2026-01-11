@@ -1,6 +1,6 @@
 package com.example.com.venom.controller;
 
-import com.example.com.venom.dto.EstablishmentFavoriteDto;
+import com.example.com.venom.dto.establishment.EstablishmentFavoriteDto;
 import com.example.com.venom.entity.UserEntity;
 import com.example.com.venom.service.UserService;
 import lombok.RequiredArgsConstructor;

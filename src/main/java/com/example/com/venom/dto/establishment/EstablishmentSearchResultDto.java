@@ -1,4 +1,4 @@
-package com.example.com.venom.dto;
+package com.example.com.venom.dto.establishment;
 
 import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.enums.EstablishmentType;

@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.example.com.venom.dto.TableCreationDto;
+import com.example.com.venom.dto.establishment.TableCreationDto;
 import com.example.com.venom.entity.TableEntity;
 import com.example.com.venom.repository.TableRepository;
 

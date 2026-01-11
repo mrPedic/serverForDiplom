@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.MediaType;
@@ -34,5 +35,26 @@ public class TestController {
     @GetMapping("/test/")
     public String home() {
         return "Venom server is running! " + LocalDateTime.now();
+    }
+
+    @GetMapping("/endpoints")
+    public ResponseEntity<Map<String, String>> getEndpoints() {
+        Map<String, String> endpoints = new HashMap<>();
+        endpoints.put("stomp_sockjs", "/ws/notifications (STOMP + SockJS)");
+        endpoints.put("plain_websocket", "/ws/plain (Plain WebSocket)");
+        endpoints.put("test_rest", "/api/test/send-notification/{userId} (REST API для теста)");
+        endpoints.put("ws_stats", "/api/websocket/stats (Статистика WebSocket)");
+
+        return ResponseEntity.ok(endpoints);
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> health() {
+        Map<String, Object> health = new HashMap<>();
+        health.put("status", "UP");
+        health.put("websocket_enabled", true);
+        health.put("timestamp", java.time.Instant.now().toString());
+
+        return ResponseEntity.ok(health);
     }
 }

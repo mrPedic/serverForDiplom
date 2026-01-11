@@ -1,4 +1,4 @@
-package com.example.com.venom;
+package com.example.com.venom.data;
 
 import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.entity.Menu.*;
@@ -11,6 +11,7 @@ import com.example.com.venom.repository.Menu.*;
 import com.example.com.venom.repository.ReviewRepository;
 import com.example.com.venom.repository.TableRepository;
 import com.example.com.venom.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +55,30 @@ public class DataInitializationService {
             "ул. Немига, 5", "ул. Горького, 28", "пр-т Дзержинского, 104",
             "ул. Козлова, 17", "ул. Мельникайте, 4", "ул. Веры Хоружей, 8"
     };
+
+    private List<String> parseScheduleToList(String rawSchedule) {
+        List<String> scheduleList = new ArrayList<>();
+        String[] parts = rawSchedule.split(", ");
+        String[] days = {"Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"};
+        for (String part : parts) {
+            String[] dayRangeTime = part.split(" ", 2);
+            if (dayRangeTime.length < 2) continue;
+            String daysStr = dayRangeTime[0];
+            String time = dayRangeTime[1];
+            if (daysStr.contains("-")) {
+                String[] dayBounds = daysStr.split("-");
+                int startIdx = Arrays.asList(days).indexOf(dayBounds[0]);
+                int endIdx = Arrays.asList(days).indexOf(dayBounds[1]);
+                if (startIdx == -1 || endIdx == -1) continue;
+                for (int i = startIdx; i <= endIdx; i++) {
+                    scheduleList.add(days[i] + ": " + time);
+                }
+            } else {
+                scheduleList.add(daysStr + ": " + time);
+            }
+        }
+        return scheduleList;
+    }
 
     // Пути к изображениям по типам заведений
     private static final Map<EstablishmentType, List<String>> PHOTO_PATHS_BY_TYPE = new HashMap<>();
@@ -871,8 +896,18 @@ public class DataInitializationService {
             establishment.setLatitude(latitude);
             establishment.setLongitude(longitude);
 
-            // Случайное расписание
-            establishment.setOperatingHoursString(SCHEDULES[random.nextInt(SCHEDULES.length)]);
+            // Случайное расписание в унифицированном формате JSON
+            String rawSchedule = SCHEDULES[random.nextInt(SCHEDULES.length)];
+            List<String> scheduleList = parseScheduleToList(rawSchedule);
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonSchedule = "";
+            try {
+                jsonSchedule = mapper.writeValueAsString(scheduleList);
+            } catch (Exception e) {
+                System.err.println("Error converting schedule to JSON: " + e.getMessage());
+                jsonSchedule = rawSchedule; // Фоллбек на старый формат, если ошибка
+            }
+            establishment.setOperatingHoursString(jsonSchedule);
 
             // Статус и рейтинг
             establishment.setStatus(EstablishmentStatus.ACTIVE);

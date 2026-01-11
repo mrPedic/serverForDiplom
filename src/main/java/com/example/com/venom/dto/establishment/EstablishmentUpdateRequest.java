@@ -1,4 +1,4 @@
-package com.example.com.venom.dto;
+package com.example.com.venom.dto.establishment;
 
 import java.util.List;
 

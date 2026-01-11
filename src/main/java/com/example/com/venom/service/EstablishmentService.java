@@ -1,10 +1,10 @@
 package com.example.com.venom.service;
 
-import com.example.com.venom.dto.EstablishmentCreationRequest;
-import com.example.com.venom.dto.EstablishmentDisplayDto;
-import com.example.com.venom.dto.EstablishmentMarkerDto;
-import com.example.com.venom.dto.EstablishmentSearchResultDto;
-import com.example.com.venom.dto.EstablishmentUpdateRequest;
+import com.example.com.venom.dto.establishment.EstablishmentCreationRequest;
+import com.example.com.venom.dto.establishment.EstablishmentDisplayDto;
+import com.example.com.venom.dto.establishment.EstablishmentMarkerDto;
+import com.example.com.venom.dto.establishment.EstablishmentSearchResultDto;
+import com.example.com.venom.dto.establishment.EstablishmentUpdateRequest;
 import com.example.com.venom.dto.forEstablishmentDetailScreen.DescriptionDTO;
 import com.example.com.venom.dto.forEstablishmentDetailScreen.MapDTO;
 import com.example.com.venom.entity.EstablishmentEntity;

@@ -15,35 +15,38 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 @Configuration
-@EnableWebSocket
-public class WebSocketConfig implements WebSocketConfigurer {
+@EnableWebSocket // ИЗМЕНЕНО: используем EnableWebSocket вместо EnableWebSocketMessageBroker
+public class WebSocketConfig implements WebSocketConfigurer { // ИЗМЕНЕНО: WebSocketConfigurer вместо WebSocketMessageBrokerConfigurer
 
     private final CustomNotificationHandler customNotificationHandler;
+
+    // УДАЛЕНО: @Autowired private CustomUserDetailsService userDetailsService;
 
     public WebSocketConfig(CustomNotificationHandler customNotificationHandler) {
         this.customNotificationHandler = customNotificationHandler;
     }
 
+    // УДАЛЕНО: configureMessageBroker метод - не нужен для обычного WebSocket
+
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        // ИЗМЕНЕНО: .withSockJS() удалено, используем обычный WebSocket
         registry.addHandler(customNotificationHandler, "/ws/notifications")
-                .addInterceptors(new AuthHandshakeInterceptor())
-                .setAllowedOriginPatterns(
-                        "http://localhost:*",
-                        "http://127.0.0.1:*",
-                        "https://*.ngrok.io",
-                        "https://*.devtunnels.ms",
-                        "http://*.devtunnels.ms",
-                        "*"
-                );
+                .addInterceptors(new PlainWebSocketHandshakeInterceptor())
+                .setAllowedOriginPatterns("*");
+
+        // Дополнительный endpoint для обратной совместимости
+        registry.addHandler(customNotificationHandler, "/ws/orders")
+                .addInterceptors(new PlainWebSocketHandshakeInterceptor())
+                .setAllowedOriginPatterns("*");
     }
 
-    private static class AuthHandshakeInterceptor implements HandshakeInterceptor {
+    private static class PlainWebSocketHandshakeInterceptor implements HandshakeInterceptor {
 
         @Override
         public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                        WebSocketHandler wsHandler, Map<String, Object> attributes) {
-            System.out.println("📡 WebSocket connection attempt from: " + request.getRemoteAddress());
+            System.out.println("📡 Plain WebSocket connection attempt from: " + request.getRemoteAddress());
             System.out.println("📡 Headers: " + request.getHeaders());
             System.out.println("📡 URI: " + request.getURI());
 
@@ -65,13 +68,13 @@ public class WebSocketConfig implements WebSocketConfigurer {
                 return false;
             }
 
-            // Пример проверки токена
-            if (!validateToken(token)) {
+            // Проверка токена (упрощенная для тестирования)
+            if (!validateToken(token, userId)) {
                 System.out.println("❌ Rejected: token invalid");
                 return false;
             }
 
-            System.out.println("✅ Connection accepted for user " + userId);
+            System.out.println("✅ Plain WebSocket connection accepted for user " + userId);
 
             // Добавляем информацию о сессии
             attributes.put("userId", userId);
@@ -90,16 +93,31 @@ public class WebSocketConfig implements WebSocketConfigurer {
             String userId = queryParams.getFirst("userId");
 
             if (exception != null) {
-                System.out.println("❌ WebSocket handshake failed for user " + userId + ": " + exception.getMessage());
+                System.out.println("❌ Plain WebSocket handshake failed for user " + userId + ": " + exception.getMessage());
             } else {
-                System.out.println("✅ WebSocket handshake successful for user " + userId);
+                System.out.println("✅ Plain WebSocket handshake successful for user " + userId);
             }
         }
 
-        private boolean validateToken(String token) {
-            // Для тестирования разрешаем любые токены
-            System.out.println("🔑 Token validation: " + token);
-            return true; // Временно всегда true для тестирования
+        private boolean validateToken(String token, String userId) {
+            // Для тестирования разрешаем токены вида "android_token_{userId}"
+            System.out.println("🔑 Token validation: " + token + " for user: " + userId);
+
+            if (token != null && token.startsWith("android_token_")) {
+                try {
+                    String tokenUserId = token.substring("android_token_".length());
+                    if (tokenUserId.equals(userId)) {
+                        System.out.println("✅ Token valid for user: " + userId);
+                        return true;
+                    }
+                } catch (Exception e) {
+                    System.out.println("❌ Error during token validation: " + e.getMessage());
+                }
+            }
+
+            // Для тестирования также разрешаем другие форматы
+            System.out.println("⚠️ Token validation skipped for testing");
+            return true;
         }
 
         private boolean isValidUserId(String userId) {

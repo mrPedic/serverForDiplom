@@ -14,6 +14,7 @@ import com.example.com.venom.dto.Menu.DrinksGroupDto;
 import com.example.com.venom.dto.Menu.FoodDto;
 import com.example.com.venom.dto.Menu.FoodGroupDto;
 import com.example.com.venom.dto.Menu.MenuOfEstablishmentDto;
+import com.example.com.venom.enums.order.MenuItemType;
 import com.example.com.venom.entity.Menu.DrinkEntity;
 import com.example.com.venom.entity.Menu.DrinkOptionEntity;
 import com.example.com.venom.entity.Menu.DrinksGroupEntity;
@@ -60,6 +61,38 @@ public class MenuService {
         menuDto.setDrinksGroups(drinksGroups);
 
         return menuDto;
+    }
+
+    // --- Получение конкретной позиции меню ---
+    @Transactional(readOnly = true)
+    public Object getMenuItemById(Long establishmentId, Long menuItemId, MenuItemType type) {
+        if (type == MenuItemType.FOOD) {
+            FoodEntity foodEntity = foodRepository.findById(menuItemId)
+                    .orElseThrow(() -> new IllegalArgumentException("Food item not found: " + menuItemId));
+
+            // Проверяем, что позиция принадлежит этому заведению
+            FoodGroupEntity foodGroup = foodGroupRepository.findById(foodEntity.getFoodGroupId())
+                    .orElseThrow(() -> new IllegalArgumentException("Food group not found"));
+            if (!foodGroup.getEstablishmentId().equals(establishmentId)) {
+                throw new IllegalArgumentException("Food item does not belong to establishment: " + establishmentId);
+            }
+
+            return mapFoodEntityToDto(foodEntity);
+        } else if (type == MenuItemType.DRINK) {
+            DrinkEntity drinkEntity = drinkRepository.findById(menuItemId)
+                    .orElseThrow(() -> new IllegalArgumentException("Drink item not found: " + menuItemId));
+
+            // Проверяем, что позиция принадлежит этому заведению
+            DrinksGroupEntity drinkGroup = drinksGroupRepository.findById(drinkEntity.getDrinkGroupId())
+                    .orElseThrow(() -> new IllegalArgumentException("Drink group not found"));
+            if (!drinkGroup.getEstablishmentId().equals(establishmentId)) {
+                throw new IllegalArgumentException("Drink item does not belong to establishment: " + establishmentId);
+            }
+
+            return mapDrinkEntityToDto(drinkEntity);
+        } else {
+            throw new IllegalArgumentException("Unknown menu item type: " + type);
+        }
     }
 
     // --- 2. CREATE/UPDATE Групп ---

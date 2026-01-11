@@ -3,7 +3,7 @@ package com.example.com.venom.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.com.venom.dto.RatingStats;
+import com.example.com.venom.dto.establishment.RatingStats;
 import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.entity.ReviewEntity;
 import com.example.com.venom.repository.EstablishmentRepository;

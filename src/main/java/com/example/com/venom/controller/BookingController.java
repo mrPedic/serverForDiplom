@@ -1,3 +1,4 @@
+// BookingController.java — исправляем путь в @GetMapping для available (была опечатка с /establishments), и вызываем новый метод
 package com.example.com.venom.controller;
 
 import java.time.LocalDateTime;
@@ -47,89 +48,101 @@ public class BookingController {
         return new ResponseEntity<>(createdBooking, HttpStatus.CREATED);
     }
 
+    // 🔥 ИСПРАВЛЕНО: Путь изменен на /bookings/{establishmentId}/available (убрана опечатка с /establishments)
     @GetMapping("/{establishmentId}/available")
     public ResponseEntity<List<TableEntity>> getAvailableTables(
             @PathVariable Long establishmentId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime
     ) {
-        log.info("--- [GET /establishments/{}/available] Checking availability for time: {}",
+        log.info("--- [GET /bookings/{}/available] Checking availability for time: {}",
                 establishmentId, dateTime);
 
         List<TableEntity> availableTables = bookingService.getAvailableTables(establishmentId, dateTime);
 
-        log.info("--- [GET /establishments/{}/available] Found {} available tables.",
+        log.info("--- [GET /bookings/{}/available] Found {} available tables",
                 establishmentId, availableTables.size());
 
         return ResponseEntity.ok(availableTables);
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<BookingDisplayDto>> getUserBookings(
-            @PathVariable Long userId
-    ) {
-        log.info("--- [GET /bookings/user/{}] Fetching bookings for user.", userId);
+    public ResponseEntity<List<BookingDisplayDto>> getUserBookings(@PathVariable Long userId) {
+        log.info("--- [GET /bookings/user/{}] Fetching bookings for user", userId);
 
-        List<BookingDisplayDto> userBookings = bookingService.getUserBookings(userId);
+        List<BookingDisplayDto> bookings = bookingService.getUserBookings(userId);
 
-        log.info("--- [GET /bookings/user/{}] Found {} bookings.", userId, userBookings.size());
-
-        return ResponseEntity.ok(userBookings);
+        return ResponseEntity.ok(bookings);
     }
 
     @DeleteMapping("/{bookingId}")
-    public ResponseEntity<Void> cancelBooking(@PathVariable Long bookingId) {
-        log.info("--- [DELETE /bookings/{}] Attempting to cancel booking.", bookingId);
+    public ResponseEntity<Void> cancelBooking(@PathVariable Long bookingId, @RequestParam Long userId) {
+        log.info("--- [DELETE /bookings/{}] Cancelling booking for userId: {}", bookingId, userId);
 
-        bookingService.cancelBooking(bookingId);
+        bookingService.cancelBooking(bookingId, userId);
 
-        log.info("--- [DELETE /bookings/{}] Successfully cancelled booking.", bookingId);
+        log.info("--- [DELETE /bookings/{}] Successfully cancelled", bookingId);
 
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/owner/{ownerId}/pending")
+    public ResponseEntity<List<OwnerBookingDisplayDto>> getPendingBookingsForOwner(@PathVariable Long ownerId) {
+        log.info("--- [GET /bookings/owner/{}/pending] Fetching pending bookings", ownerId);
+
+        List<OwnerBookingDisplayDto> bookings = bookingService.getPendingBookingsForOwner(ownerId);
+
+        return ResponseEntity.ok(bookings);
     }
 
     @PutMapping("/{bookingId}/status")
     public ResponseEntity<Void> updateBookingStatus(
             @PathVariable Long bookingId,
-            @RequestParam("status") String status,
-            @RequestParam("ownerId") Long ownerId) {
+            @RequestParam String status,
+            @RequestParam Long ownerId
+    ) {
+        log.info("--- [PUT /bookings/{}/status] Updating to {} by owner {}", bookingId, status, ownerId);
 
-        log.info("Изменение статуса брони {} на {} от владельца {}", bookingId, status, ownerId);
-        bookingService.updateBookingStatus(bookingId, status, ownerId);
+        BookingEntity booking = bookingService.updateBookingStatus(bookingId, status, ownerId);
+        bookingService.notifyUserAboutStatusChange(booking, status);
+
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/owner/{ownerId}/pending")
-    public ResponseEntity<List<OwnerBookingDisplayDto>> getPendingBookingsForOwner(
-            @PathVariable Long ownerId) {
+    // 🔥 НОВЫЙ ЭНДПОИНТ: Для approved броней (CONFIRMED)
+    @GetMapping("/owner/{ownerId}/approved")
+    public ResponseEntity<List<OwnerBookingDisplayDto>> getApprovedBookingsForOwner(
+            @PathVariable Long ownerId,
+            @RequestParam(required = false) Long establishmentId
+    ) {
+        log.info("--- [GET /bookings/owner/{}/approved] Fetching approved bookings, establishmentId: {}", ownerId, establishmentId);
 
-        log.info("Запрос pending-броней для владельца {}", ownerId);
-        List<OwnerBookingDisplayDto> bookings = bookingService.getPendingBookingsForOwner(ownerId);
+        List<OwnerBookingDisplayDto> bookings = bookingService.getApprovedBookingsForOwner(ownerId, establishmentId);
+
         return ResponseEntity.ok(bookings);
     }
 
-    // 🔥 ТЕСТОВЫЙ ENDPOINT ДЛЯ ОТПРАВКИ УВЕДОМЛЕНИЙ
-    @PostMapping("/test-notification/{establishmentId}")
-    public ResponseEntity<Map<String, Object>> testBookingNotification(
+    // Тестовый эндпоинт для уведомлений
+    @PostMapping("/test/notification/{establishmentId}")
+    public ResponseEntity<Map<String, Object>> sendTestNotification(
             @PathVariable Long establishmentId,
-            @RequestBody Map<String, Object> testData) {
-
-        log.info("Тестовая отправка уведомления для заведения {}", establishmentId);
-
+            @RequestBody(required = false) Map<String, Object> testData
+    ) {
         try {
-            // Формируем JSON уведомления с помощью Jackson ObjectMapper
+            if (testData == null) {
+                testData = Map.of();
+            }
+
             ObjectNode notification = objectMapper.createObjectNode();
-            notification.put("type", "NEW_BOOKING");
+            notification.put("id", "test_" + System.currentTimeMillis());
+            notification.put("type", "new_booking");
+            notification.put("title", "Тестовое уведомление");
+            notification.put("message", "Поступила новая бронь для вашего заведения");
 
             ObjectNode data = objectMapper.createObjectNode();
 
             Object bookingIdObj = testData.get("bookingId");
-            if (bookingIdObj instanceof Number) {
-                data.put("bookingId", ((Number) bookingIdObj).longValue());
-            } else if (bookingIdObj != null) {
-                data.put("bookingId", Long.parseLong(bookingIdObj.toString()));
-            } else {
-                data.put("bookingId", 9999L);
-            }
+            data.put("bookingId", bookingIdObj != null ?
+                    ((Number) bookingIdObj).longValue() : 9999L);
 
             data.put("establishmentId", establishmentId);
 

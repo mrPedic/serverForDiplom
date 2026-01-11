@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.com.venom.dto.EstablishmentFavoriteDto;
+import com.example.com.venom.dto.establishment.EstablishmentFavoriteDto;
 import com.example.com.venom.entity.UserEntity;
 import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.repository.UserRepository;

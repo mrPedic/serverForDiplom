@@ -37,18 +37,6 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
     public CustomNotificationHandler(SubscriptionService subscriptionService, ObjectMapper objectMapper) {
         this.subscriptionService = subscriptionService;
         this.objectMapper = objectMapper;
-
-        // Запускаем периодическую очистку неактивных сессий
-        scheduler.scheduleAtFixedRate(() -> {
-            try {
-                int cleaned = subscriptionService.cleanupInactiveSessions(30);
-                if (cleaned > 0) {
-                    logger.info("Cleaned up {} inactive sessions", cleaned);
-                }
-            } catch (Exception e) {
-                logger.error("Error during session cleanup: {}", e.getMessage());
-            }
-        }, 30, 30, TimeUnit.MINUTES);
     }
 
     @Override
@@ -87,9 +75,6 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
                 safeSend(session, String.format(
                         "{\"type\": \"connected\", \"sessionId\": \"%s\", \"userId\": \"%s\", \"timestamp\": \"%d\"}",
                         session.getId(), userId, Instant.now().getEpochSecond()));
-
-                // 🔥 ОТПРАВЛЯЕМ ТЕСТОВОЕ УВЕДОМЛЕНИЕ ПРИ ПОДКЛЮЧЕНИИ
-                sendTestNotification(userId, session.getId(), "connection_established");
 
                 // Запускаем пинг
                 startPing(session);
@@ -132,35 +117,20 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
                 switch (type) {
                     case "subscribe":
                         handleSubscribe(session, request, requestId);
-                        // 🔥 ОТПРАВЛЯЕМ ТЕСТОВОЕ УВЕДОМЛЕНИЕ ПРИ ПОДПИСКЕ
-                        String channel = request.has("channel") ? request.get("channel").asText() : "";
-                        if (!channel.isEmpty()) {
-                            sendTestNotificationToChannel(channel, "subscription_confirmed", session.getId());
-                        }
                         break;
                     case "unsubscribe":
                         handleUnsubscribe(session, request, requestId);
                         break;
                     case "ping":
                         handlePing(session, requestId);
-                        // 🔥 ОТПРАВЛЯЕМ ТЕСТОВОЕ УВЕДОМЛЕНИЕ ПРИ PING
-                        String userId = subscriptionService.getUserBySession(session.getId());
-                        if (userId != null) {
-                            sendTestNotification(userId, session.getId(), "ping_received");
-                        }
                         break;
                     case "pong":
                         logger.debug("Received pong from session {}", session.getId());
-                        // 🔥 ОТПРАВЛЯЕМ ТЕСТОВОЕ УВЕДОМЛЕНИЕ ПРИ PONG
-                        String userForPong = subscriptionService.getUserBySession(session.getId());
-                        if (userForPong != null) {
-                            sendTestNotification(userForPong, session.getId(), "pong_received");
-                        }
                         break;
                     case "auth":
                         handleAuth(session, request, requestId);
                         break;
-                    case "test_notification": // 🔥 НОВЫЙ ТИП: запрос тестового уведомления
+                    case "test_notification": // Оставляем возможность ручного запроса тестового уведомления
                         handleTestNotification(session, request, requestId);
                         break;
                     default:
@@ -186,7 +156,7 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
                 "{\"type\": \"test_notification_ack\", \"requestId\": \"%s\", \"timestamp\": \"%d\"}",
                 requestId, Instant.now().getEpochSecond()));
 
-        // 🔥 ОТПРАВЛЯЕМ ТЕСТОВОЕ УВЕДОМЛЕНИЕ
+        // Отправляем тестовое уведомление только при явном запросе
         String notificationType = request.has("notificationType") ?
                 request.get("notificationType").asText() : "manual_test";
         int count = sendTestNotification(userId, session.getId(), notificationType);
@@ -195,7 +165,7 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
                 userId, count, notificationType);
     }
 
-    // 🔥 МЕТОД ДЛЯ ОТПРАВКИ ТЕСТОВОГО УВЕДОМЛЕНИЯ ПОЛЬЗОВАТЕЛЮ
+    // Метод для отправки тестового уведомления пользователю (только по запросу)
     private int sendTestNotification(String userId, String sessionId, String trigger) {
         try {
             String testMessage = String.format(
@@ -228,29 +198,6 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
         }
     }
 
-    // 🔥 МЕТОД ДЛЯ ОТПРАВКИ ТЕСТОВОГО УВЕДОМЛЕНИЯ В КАНАЛ
-    private int sendTestNotificationToChannel(String channel, String trigger, String sessionId) {
-        try {
-            String testMessage = String.format(
-                    "{\"type\": \"TEST_CHANNEL_NOTIFICATION\", \"data\": {" +
-                            "\"message\": \"Тестовое уведомление в канал\", " +
-                            "\"channel\": \"%s\", " +
-                            "\"trigger\": \"%s\", " +
-                            "\"sessionId\": \"%s\", " +
-                            "\"timestamp\": \"%d\", " +
-                            "\"testId\": \"channel_test_%d\"}}",
-                    channel, trigger, sessionId,
-                    Instant.now().getEpochSecond(),
-                    System.currentTimeMillis());
-
-            return broadcastToChannel(channel, testMessage);
-        } catch (Exception e) {
-            logger.error("Error sending channel test notification: {}", e.getMessage());
-            return 0;
-        }
-    }
-
-    // ... остальные методы остаются без изменений ...
     private void handleSubscribe(WebSocketSession session, JsonNode request, String requestId) {
         String channel = request.has("channel") ? request.get("channel").asText() : "";
         if (channel.isEmpty()) {
@@ -302,17 +249,14 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        // Проверяем, не была ли сессия уже удалена при обработке EOF
-        if (sessions.containsKey(session.getId())) {
-            sessions.remove(session.getId());
+        sessions.remove(session.getId());
 
-            executorService.submit(() -> {
-                String userId = subscriptionService.getUserBySession(session.getId());
-                subscriptionService.unsubscribeAll(session.getId());
-                logger.info("User {} disconnected with status: {} (code: {}, reason: {})",
-                        userId, status, status.getCode(), status.getReason());
-            });
-        }
+        executorService.submit(() -> {
+            String userId = subscriptionService.getUserBySession(session.getId());
+            subscriptionService.unsubscribeAll(session.getId());
+            logger.info("User {} disconnected with status: {} (code: {}, reason: {})",
+                    userId, status, status.getCode(), status.getReason());
+        });
     }
 
     private boolean safeSend(WebSocketSession session, String message) {
@@ -391,25 +335,14 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) {
-        if (exception instanceof IOException) {
-            String message = exception.getMessage();
-            if (message != null && message.contains("EOF")) {
-                logger.info("WebSocket connection closed by client for session {}", session.getId());
-                // Не пытаемся закрыть сессию - она уже закрыта клиентом
-                // Просто выполняем очистку
-                executorService.submit(() -> {
-                    String userId = subscriptionService.getUserBySession(session.getId());
-                    subscriptionService.unsubscribeAll(session.getId());
-                    sessions.remove(session.getId());
-                    logger.info("User {} session {} cleaned up after client disconnect",
-                            userId, session.getId());
-                });
-                return;
-            }
+        if (exception instanceof IOException && exception.getMessage() != null &&
+                exception.getMessage().contains("EOF")) {
+            logger.info("WebSocket connection closed normally for session {}", session.getId());
+            executorService.submit(() -> safeClose(session, CloseStatus.NORMAL));
+        } else {
+            logger.error("Transport error for session {}: {}", session.getId(), exception.getMessage(), exception);
+            executorService.submit(() -> safeClose(session, CloseStatus.SERVER_ERROR.withReason("Transport error")));
         }
-
-        logger.error("Transport error for session {}: {}", session.getId(), exception.getMessage(), exception);
-        executorService.submit(() -> safeClose(session, CloseStatus.SERVER_ERROR.withReason("Transport error")));
     }
 
     private void startPing(WebSocketSession session) {
@@ -433,14 +366,11 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
 
     private void safeClose(WebSocketSession session, CloseStatus status) {
         try {
-            if (session != null && session.isOpen()) {
+            if (session.isOpen()) {
                 session.close(status);
             }
-        } catch (IllegalStateException e) {
-            // Сессия уже закрыта - это нормально
-            logger.debug("Session {} already closed", session.getId());
         } catch (Exception e) {
-            logger.error("Error closing session {}: {}", session.getId(), e.getMessage());
+            logger.error("Error closing session {}", session.getId(), e);
         }
     }
 
@@ -452,17 +382,6 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
     @PreDestroy
     public void destroy() {
         logger.info("Shutting down WebSocket handler...");
-
-        // Закрываем все активные сессии
-        sessions.values().forEach(session -> {
-            safeClose(session, CloseStatus.GOING_AWAY.withReason("Server shutdown"));
-        });
-
-        // Очищаем все коллекции
-        sessions.clear();
-        sessionLocks.clear();
-
-        // Останавливаем executor'ы
         scheduler.shutdown();
         executorService.shutdown();
 
@@ -479,7 +398,19 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
             Thread.currentThread().interrupt();
         }
 
-        logger.info("WebSocket handler shutdown completed");
+        // Закрываем все активные сессии
+        sessions.values().forEach(session -> {
+            if (session.isOpen()) {
+                try {
+                    session.close(CloseStatus.GOING_AWAY.withReason("Server shutdown"));
+                } catch (Exception e) {
+                    logger.error("Error closing session {}", session.getId(), e);
+                }
+            }
+        });
+
+        sessionLocks.clear();
+        logger.info("Session locks cleared");
     }
 
     // Java-совместимые методы (те же самые, но для совместимости)

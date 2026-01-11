@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.com.venom.dto.TableCreationDto;
+import com.example.com.venom.dto.establishment.TableCreationDto;
 import com.example.com.venom.entity.TableEntity;
 import com.example.com.venom.service.TableService;
 
