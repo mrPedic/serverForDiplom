@@ -3,6 +3,7 @@ package com.example.com.venom.entity;
 import com.example.com.venom.enums.order.OrderNotificationType;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -12,18 +13,17 @@ import java.time.LocalDateTime;
 @Table(name = "order_notifications")
 @Getter
 @Setter
+@NoArgsConstructor // Не забывай пустой конструктор для JPA
 public class OrderNotificationEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "order_id", nullable = false)
-    private OrderEntity order;
+    @Column(name = "order_id", nullable = false)
+    private Long orderId; // Теперь просто ID
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;   // Теперь просто ID
 
     @Column(name = "establishment_id", nullable = false)
     private Long establishmentId;

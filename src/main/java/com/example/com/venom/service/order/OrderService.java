@@ -1,27 +1,25 @@
 package com.example.com.venom.service.order;
 
-import com.example.com.venom.dto.Menu.DrinkDto;
-import com.example.com.venom.dto.Menu.DrinkOptionDto;
-import com.example.com.venom.dto.Menu.FoodDto;
 import com.example.com.venom.dto.Menu.MenuItemDto;
 import com.example.com.venom.dto.order.*;
-import com.example.com.venom.entity.DeliveryAddressEntity;
-import com.example.com.venom.entity.EstablishmentEntity;
-import com.example.com.venom.entity.OrderEntity;
-import com.example.com.venom.entity.OrderItemEntity;
+import com.example.com.venom.entity.*;
+import com.example.com.venom.enums.order.MenuItemType;
 import com.example.com.venom.enums.order.OrderStatus;
 import com.example.com.venom.repository.EstablishmentRepository;
 import com.example.com.venom.repository.UserRepository;
-import com.example.com.venom.repository.order.DeliveryAddressRepository;
 import com.example.com.venom.repository.order.OrderItemRepository;
 import com.example.com.venom.repository.order.OrderRepository;
-import com.example.com.venom.service.BusinessException;
 import com.example.com.venom.service.MenuService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -33,60 +31,106 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
-    private final DeliveryAddressRepository deliveryAddressRepository;
-    private final EstablishmentRepository establishmentRepository;
-    private final MenuService menuService;
     private final UserRepository userRepository;
+    private final EstablishmentRepository establishmentRepository;
     private final OrderNotificationService notificationService;
+    private final OrderPriceCalculator priceCalculator;
+    private final MenuService menuService;
+    private final ObjectMapper objectMapper = new ObjectMapper(); // Для парсинга JSON расписания
 
+    @Transactional
     public OrderDto createOrder(CreateOrderRequest request, Long userId) {
-        // 1. Проверяем существование заведения
+        // 1. ВАЛИДАЦИЯ ДАТЫ: Проверяем, что заказ не слишком далеко в будущем
+        if (request.getDeliveryTime() != null) {
+            LocalDateTime maxDate = LocalDateTime.now().plusWeeks(2);
+            if (request.getDeliveryTime().isAfter(maxDate)) {
+                throw new IllegalArgumentException("Заказ можно оформить максимум на 2 недели вперед");
+            }
+            if (request.getDeliveryTime().isBefore(LocalDateTime.now())) {
+                throw new IllegalArgumentException("Время доставки не может быть в прошлом");
+            }
+        }
+
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
+
         EstablishmentEntity establishment = establishmentRepository.findById(request.getEstablishmentId())
                 .orElseThrow(() -> new EntityNotFoundException("Заведение не найдено"));
 
-        // 2. Проверяем время работы заведения
-        validateDeliveryTime(establishment, request.getDeliveryTime());
-
-        // 3. Получаем адрес доставки
-        DeliveryAddressEntity deliveryAddress = getDeliveryAddress(request, userId);
-
-        // 4. Рассчитываем позиции заказа и общую стоимость
-        List<OrderItemEntity> orderItems = new ArrayList<>();
-        double totalPrice = 0.0;
-
-        for (CreateOrderItemDto itemRequest : request.getItems()) {
-            OrderItemEntity item = createOrderItem(itemRequest, establishment);
-            orderItems.add(item);
-            totalPrice += item.getTotalPrice();
-        }
-
-        // 5. Создаем заказ
         OrderEntity order = new OrderEntity();
-        order.setEstablishment(establishment);
-        order.setUser(userRepository.getReferenceById(userId));
+        order.setUserId(user.getId());
+        order.setEstablishmentId(establishment.getId());
         order.setStatus(OrderStatus.PENDING);
-        order.setDeliveryAddress(deliveryAddress);
+        order.setDeliveryAddressId(request.getDeliveryAddressId());
         order.setContactless(request.isContactless());
         order.setPaymentMethod(request.getPaymentMethod());
         order.setDeliveryTime(request.getDeliveryTime());
         order.setComments(request.getComments());
-        order.setTotalPrice(totalPrice);
 
+        // --- ИСПРАВЛЕНИЕ ЦЕНЫ ---
+        // Вместо priceCalculator.calculateTotalPrice (который добавляет 200р), считаем сумму позиций вручную
+        double calculatedTotal = 0.0;
+
+        // Сначала сохраняем заказ, чтобы получить ID
+        // (Цену обновим после подсчета всех позиций)
+        order.setTotalPrice(0.0);
         OrderEntity savedOrder = orderRepository.save(order);
 
-        // 6. Сохраняем позиции заказа с ссылкой на заказ
-        orderItems.forEach(item -> item.setOrder(savedOrder));
-        orderItemRepository.saveAll(orderItems);
+        List<OrderItemEntity> items = new ArrayList<>();
 
-        // 7. Отправляем уведомление администратору заведения
+        for (CreateOrderItemDto itemDto : request.getItems()) {
+            OrderItemEntity item = new OrderItemEntity();
+            item.setOrderId(savedOrder.getId());  // Устанавливаем orderId (Long)
+
+            item.setMenuItemId(itemDto.getMenuItemId());
+            item.setMenuItemType(itemDto.getMenuItemType());
+
+            // Получаем информацию о меню
+            MenuItemDto menuItemInfo = getMenuItemInfo(
+                    itemDto.getMenuItemId(),
+                    itemDto.getMenuItemType(),
+                    establishment.getId()
+            );
+
+            item.setMenuItemName(menuItemInfo.getName());
+
+            item.setQuantity(itemDto.getQuantity());
+
+            // Рассчитываем цену позиции
+            double itemPrice = calculateItemPrice(itemDto, establishment);
+            item.setPricePerUnit(itemPrice);
+            double itemTotal = itemPrice * itemDto.getQuantity();
+            item.setTotalPrice(itemTotal);
+
+            calculatedTotal += itemTotal;
+
+            // Опции (для напитков) — напрямую Map → Map (Hibernate сам сериализует)
+            if (itemDto.getSelectedOptions() != null) {
+                item.setOptions(itemDto.getSelectedOptions());
+            }
+
+            OrderItemEntity savedItem = orderItemRepository.save(item);
+            items.add(savedItem);
+        }
+
+        // Обновляем общую цену заказа
+        savedOrder.setTotalPrice(calculatedTotal);
+        orderRepository.save(savedOrder);
+
+        // Отправляем уведомление заведению (используем существующий метод)
         notificationService.sendOrderCreatedNotification(savedOrder);
 
-        return convertToDto(savedOrder, orderItems);
+        return convertToDto(savedOrder);
+    }
+
+    public OrderDto getOrderById(Long id) {
+        OrderEntity entity = orderRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Заказ не найден"));
+        return convertToDto(entity);
     }
 
     public List<OrderDto> getUserOrders(Long userId) {
@@ -96,253 +140,143 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    public List<OrderDto> getEstablishmentOrders(Long establishmentId, OrderStatus status) {
-        List<OrderEntity> orders;
-        if (status != null) {
-            orders = orderRepository.findByEstablishmentIdAndStatusOrderByCreatedAtDesc(establishmentId, status);
-        } else {
-            orders = orderRepository.findByEstablishmentIdOrderByCreatedAtDesc(establishmentId);
-        }
-
-        return orders.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    public OrderDto updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
-        OrderEntity order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("Заказ не найден"));
-
-        OrderStatus oldStatus = order.getStatus();
-        order.setStatus(request.getStatus());
-
-        if (request.getStatus() == OrderStatus.REJECTED) {
-            order.setRejectionReason(request.getRejectionReason());
-        }
-
-        OrderEntity updatedOrder = orderRepository.save(order);
-
-        // Отправляем уведомление пользователю об изменении статуса
-        notificationService.sendOrderStatusChangedNotification(updatedOrder, oldStatus);
-
-        return convertToDto(updatedOrder);
-    }
-
     public List<TimeSlotDto> getAvailableTimeSlots(Long establishmentId, LocalDate date) {
         EstablishmentEntity establishment = establishmentRepository.findById(establishmentId)
                 .orElseThrow(() -> new EntityNotFoundException("Заведение не найдено"));
 
-        List<TimeSlotDto> timeSlots = new ArrayList<>();
-        LocalTime openTime = getOpeningTime(establishment, date);
-        LocalTime closeTime = getClosingTime(establishment, date);
+        // Получаем расписание (теперь строка)
+        String scheduleJson = establishment.getOperatingHoursString();
 
-        if (openTime == null || closeTime == null) {
-            return timeSlots; // Заведение не работает в этот день
+        Map<String, String> schedule;
+        try {
+            schedule = objectMapper.readValue(scheduleJson, new TypeReference<Map<String, String>>() {});
+        } catch (Exception e) {
+            throw new IllegalStateException("Ошибка парсинга расписания заведения");
         }
 
-        LocalTime currentTime = openTime;
-        LocalDateTime now = LocalDateTime.now();
+        // Получаем день недели на русском
+        String dayKey = getRussianDayKey(date.getDayOfWeek());
 
-        // Генерируем слоты с 30-минутным интервалом и 15-минутным шагом
-        while (currentTime.isBefore(closeTime.minusMinutes(30))) {
-            LocalTime endTime = currentTime.plusMinutes(30);
-            LocalDateTime slotStart = LocalDateTime.of(date, currentTime);
-            LocalDateTime slotEnd = LocalDateTime.of(date, endTime);
+        String hours = schedule.getOrDefault(dayKey, "Закрыто");
 
-            // Проверяем, что слот в будущем (минимум через 45 минут от текущего времени)
-            boolean isAvailable = slotStart.isAfter(now.plusMinutes(45)) &&
-                    isSlotAvailable(establishmentId, slotStart, slotEnd);
-
-            TimeSlotDto slot = new TimeSlotDto(
-                    slotStart,
-                    slotEnd,
-                    currentTime.format(DateTimeFormatter.ofPattern("HH:mm")) + "-" +
-                            endTime.format(DateTimeFormatter.ofPattern("HH:mm")),
-                    isAvailable
-            );
-
-            timeSlots.add(slot);
-            currentTime = currentTime.plusMinutes(15);
+        if (hours.equals("Закрыто")) {
+            return new ArrayList<>(); // Нет слотов
         }
 
-        return timeSlots;
+        // Парсим время открытия/закрытия
+        String[] parts = hours.split(" - ");
+        if (parts.length != 2) {
+            throw new IllegalStateException("Неверный формат часов работы");
+        }
+
+        LocalTime openTime = LocalTime.parse(parts[0]);
+        LocalTime closeTime = LocalTime.parse(parts[1]);
+
+        // Генерируем слоты
+        return generateSlots(date, openTime, closeTime);
     }
 
-    private void validateDeliveryTime(EstablishmentEntity establishment, LocalDateTime deliveryTime) {
-        // Проверяем, что время доставки в будущем (минимум через 45 минут)
-        LocalDateTime minDeliveryTime = LocalDateTime.now().plusMinutes(45);
-        if (deliveryTime.isBefore(minDeliveryTime)) {
-            throw new BusinessException("Время доставки должно быть минимум через 45 минут от текущего времени");
-        }
+    private List<TimeSlotDto> generateSlots(LocalDate date, LocalTime open, LocalTime close) {
+        List<TimeSlotDto> slots = new ArrayList<>();
+        LocalTime current = open;
 
-        // Проверяем время работы заведения
-        LocalTime openTime = getOpeningTime(establishment, deliveryTime.toLocalDate());
-        LocalTime closeTime = getClosingTime(establishment, deliveryTime.toLocalDate());
+        // Если дата сегодня, начинаем слоты не раньше чем сейчас + 45 мин на готовку
+        if (date.isEqual(LocalDate.now())) {
+            LocalTime nowPlusPrep = LocalTime.now().plusMinutes(45);
+            // Округляем до ближайших 15 минут в большую сторону
+            int minute = nowPlusPrep.getMinute();
+            int remainder = minute % 15;
+            if (remainder != 0) {
+                nowPlusPrep = nowPlusPrep.plusMinutes(15 - remainder);
+            }
 
-        if (openTime == null || closeTime == null ||
-                deliveryTime.toLocalTime().isBefore(openTime) ||
-                deliveryTime.toLocalTime().isAfter(closeTime.minusMinutes(30))) {
-            throw new BusinessException("Выбранное время доставки выходит за рамки времени работы заведения");
-        }
-    }
-
-    private DeliveryAddressEntity getDeliveryAddress(CreateOrderRequest request, Long userId) {
-        if (request.getDeliveryAddressId() != null) {
-            // Используем существующий адрес (делаем копию для истории)
-            DeliveryAddressEntity existing = deliveryAddressRepository.findByIdAndUserId(
-                            request.getDeliveryAddressId(), userId)
-                    .orElseThrow(() -> new EntityNotFoundException("Адрес не найден"));
-
-            DeliveryAddressEntity copy = new DeliveryAddressEntity();
-            copy.setStreet(existing.getStreet());
-            copy.setHouse(existing.getHouse());
-            copy.setBuilding(existing.getBuilding());
-            copy.setApartment(existing.getApartment());
-            copy.setEntrance(existing.getEntrance());
-            copy.setFloor(existing.getFloor());
-            copy.setComment(existing.getComment());
-            return deliveryAddressRepository.save(copy);
-
-        } else if (request.getDeliveryAddress() != null) {
-            // Создаем новый временный адрес
-            DeliveryAddressEntity newAddress = new DeliveryAddressEntity();
-            newAddress.setUser(userRepository.getReferenceById(userId));
-            newAddress.setStreet(request.getDeliveryAddress().getStreet());
-            newAddress.setHouse(request.getDeliveryAddress().getHouse());
-            newAddress.setBuilding(request.getDeliveryAddress().getBuilding());
-            newAddress.setApartment(request.getDeliveryAddress().getApartment());
-            newAddress.setEntrance(request.getDeliveryAddress().getEntrance());
-            newAddress.setFloor(request.getDeliveryAddress().getFloor());
-            newAddress.setComment(request.getDeliveryAddress().getComment());
-            newAddress.setDefault(false);
-            return deliveryAddressRepository.save(newAddress);
-        }
-
-        return null;
-    }
-
-    private OrderItemEntity createOrderItem(CreateOrderItemDto itemRequest, EstablishmentEntity establishment) {
-        // Получаем информацию о позиции меню
-        Object menuItem = menuService.getMenuItemById(
-                establishment.getId(),
-                itemRequest.getMenuItemId(),
-                itemRequest.getMenuItemType()
-        );
-
-        // Рассчитываем цену
-        double pricePerUnit = calculatePrice(menuItem, itemRequest.getSelectedOptions());
-        double totalPrice = pricePerUnit * itemRequest.getQuantity();
-
-        OrderItemEntity item = new OrderItemEntity();
-        MenuItemDto menuItemDto = (MenuItemDto) menuItem;
-        item.setMenuItemId(menuItemDto.getId());
-        item.setMenuItemName(menuItemDto.getName());
-        item.setMenuItemType(itemRequest.getMenuItemType());
-        item.setQuantity(itemRequest.getQuantity());
-        item.setPricePerUnit(pricePerUnit);
-        item.setTotalPrice(totalPrice);
-
-        if (itemRequest.getSelectedOptions() != null) {
-            item.setOptions(convertOptionsToJson(itemRequest.getSelectedOptions()));
-        }
-
-        return item;
-    }
-
-    private double calculatePrice(Object menuItem, Map<String, String> selectedOptions) {
-        // Для еды - просто цена
-        if (menuItem instanceof FoodDto) {
-            return ((FoodDto) menuItem).getCost();
-        }
-
-        // Для напитков - цена зависит от выбранного размера
-        if (menuItem instanceof DrinkDto && selectedOptions != null) {
-            DrinkDto drink = (DrinkDto) menuItem;
-            String sizeStr = selectedOptions.get("size");
-            if (sizeStr != null) {
-                int size = Integer.parseInt(sizeStr);
-                return drink.getOptions().stream()
-                        .filter(opt -> opt.getSizeMl() == size)
-                        .map(DrinkOptionDto::getCost)
-                        .findFirst()
-                        .orElse(drink.getOptions().get(0).getCost());
+            if (nowPlusPrep.isAfter(current)) {
+                current = nowPlusPrep;
             }
         }
 
-        return menuItem instanceof DrinkDto ?
-                ((DrinkDto) menuItem).getOptions().get(0).getCost() : 0.0;
-    }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 
-    private boolean isSlotAvailable(Long establishmentId, LocalDateTime start, LocalDateTime end) {
-        // Проверяем, есть ли уже заказы на это время
-        // Можно ограничить количество одновременных заказов на один временной слот
-        List<OrderEntity> existingOrders = orderRepository.findOrdersByEstablishmentAndDateRange(
-                establishmentId,
-                start.minusMinutes(30), // За 30 минут до начала слота
-                end.plusMinutes(30)     // И 30 минут после окончания
-        );
+        // Генерируем слоты
+        while (current.isBefore(close.minusMinutes(30)) || current.equals(close.minusMinutes(30))) {
+            LocalTime slotEndTime = current.plusMinutes(30);
 
-        // Предположим, что заведение может обрабатывать не более 3 заказов одновременно
-        return existingOrders.size() < 3;
-    }
+            if (slotEndTime.isAfter(close)) break;
 
-    private OrderDto convertToDto(OrderEntity order) {
-        List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(order.getId());
-        return convertToDto(order, orderItems);
-    }
+            // Создаем LocalDateTime для начала и конца слота
+            LocalDateTime startDateTime = LocalDateTime.of(date, current);
+            LocalDateTime endDateTime = LocalDateTime.of(date, slotEndTime);
 
-    private OrderDto convertToDto(OrderEntity order, List<OrderItemEntity> orderItems) {
-        return OrderDto.builder()
-                .id(order.getId())
-                .userId(order.getUser().getId())
-                .establishmentId(order.getEstablishment().getId())
-                .status(order.getStatus())
-                .totalPrice(order.getTotalPrice())
-                .deliveryTime(order.getDeliveryTime())
-                .deliveryAddressId(order.getDeliveryAddress() != null ?
-                    order.getDeliveryAddress().getId() : null)
-                .items(orderItems.stream()
-                    .map(this::convertOrderItemToDto)
-                    .collect(Collectors.toList()))
-                .createdAt(order.getCreatedAt())
-                .updatedAt(order.getUpdatedAt())
-                .build();
-    }
+            // Формируем текст для отображения (например, "12:30 - 13:00")
+            String label = current.format(formatter) + " - " + slotEndTime.format(formatter);
 
-    private OrderItemDto convertOrderItemToDto(OrderItemEntity item) {
-        return OrderItemDto.builder()
-                .id(item.getId())
-                .orderId(item.getOrder() != null ? item.getOrder().getId() : null)
-                .menuItemId(item.getMenuItemId())
-                .menuItemName(item.getMenuItemName())
-                .menuItemType(item.getMenuItemType())
-                .quantity(item.getQuantity())
-                .pricePerUnit(item.getPricePerUnit())
-                .totalPrice(item.getTotalPrice())
-                .options(item.getOptions())
-                .build();
-    }
+            slots.add(new TimeSlotDto(startDateTime, endDateTime, label, true));
 
-    private LocalTime getOpeningTime(EstablishmentEntity establishment, LocalDate date) {
-        // Логика получения времени открытия заведения на конкретную дату
-        // Пока возвращаем фиксированное время
-        return LocalTime.of(9, 0); // 9:00
-    }
-
-    private LocalTime getClosingTime(EstablishmentEntity establishment, LocalDate date) {
-        // Логика получения времени закрытия заведения на конкретную дату
-        // Пока возвращаем фиксированное время
-        return LocalTime.of(23, 0); // 23:00
-    }
-
-    private String convertOptionsToJson(Map<String, String> options) {
-        // Преобразование опций в JSON строку
-        if (options == null || options.isEmpty()) {
-            return "{}";
+            // Шаг генерации — 15 минут
+            current = current.plusMinutes(15);
         }
-        // Простая реализация - можно использовать Jackson ObjectMapper
-        return "{" + options.entrySet().stream()
-                .map(e -> "\"" + e.getKey() + "\":\"" + e.getValue() + "\"")
-                .collect(Collectors.joining(",")) + "}";
+
+        return slots;
+    }
+
+    private String getRussianDayKey(DayOfWeek day) {
+        switch (day) {
+            case MONDAY: return "Пн";
+            case TUESDAY: return "Вт";
+            case WEDNESDAY: return "Ср";
+            case THURSDAY: return "Чт";
+            case FRIDAY: return "Пт";
+            case SATURDAY: return "Сб";
+            case SUNDAY: return "Вс";
+            default: return "Пн";
+        }
+    }
+
+    private OrderDto convertToDto(OrderEntity entity) {
+        // Инициализируем коллекцию items (на всякий случай, хотя в unidirectional OneToMany она обычно загружается)
+        Hibernate.initialize(entity.getItems());
+
+        List<OrderItemDto> itemsDto = entity.getItems().stream()
+                .map(item -> OrderItemDto.builder()
+                        .id(item.getId())
+                        .orderId(item.getOrderId())
+                        .menuItemId(item.getMenuItemId())
+                        .menuItemName(item.getMenuItemName())
+                        .menuItemType(item.getMenuItemType())
+                        .quantity(item.getQuantity())
+                        .pricePerUnit(item.getPricePerUnit())
+                        .totalPrice(item.getTotalPrice())
+                        .options(item.getOptions())  // Прямо Map<String, String> → Map (без сериализации в String)
+                        .build())
+                .collect(Collectors.toList());
+
+        return OrderDto.builder()
+                .id(entity.getId())
+                .userId(entity.getUserId())
+                .establishmentId(entity.getEstablishmentId())
+                .status(entity.getStatus())
+                .totalPrice(entity.getTotalPrice())
+                .deliveryTime(entity.getDeliveryTime())
+                .deliveryAddressId(entity.getDeliveryAddressId())
+                .isContactless(entity.isContactless())
+                .paymentMethod(entity.getPaymentMethod())
+                .comments(entity.getComments())
+                .rejectionReason(entity.getRejectionReason())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .items(itemsDto)
+                .build();
+    }
+
+    private MenuItemDto getMenuItemInfo(Long menuItemId, MenuItemType type, Long establishmentId) {
+        Object menuItem = menuService.getMenuItemById(establishmentId, menuItemId, type);
+        if (menuItem instanceof MenuItemDto) {
+            return (MenuItemDto) menuItem;
+        }
+        throw new IllegalArgumentException("Invalid menu item type or not found");
+    }
+
+    private double calculateItemPrice(CreateOrderItemDto itemDto, EstablishmentEntity establishment) {
+        return priceCalculator.calculateItemPrice(itemDto, establishment);
     }
 }

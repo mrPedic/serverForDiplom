@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,5 +21,5 @@ public class OrderItemDto {
     private Integer quantity;
     private double pricePerUnit;
     private double totalPrice;
-    private String options; // Для напитков (JSON)
+    private Map<String, String> options; // Для напитков (JSON)
 }

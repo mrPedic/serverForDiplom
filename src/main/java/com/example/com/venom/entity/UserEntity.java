@@ -88,6 +88,8 @@ public class UserEntity {
     public void setRole(Role role) { this.role = role; }
     public void setDateCreation(LocalDate date){this.dateOfCreation = date;}
 
+
+
     public enum Role{
         Registered,
         UnRegistered,

@@ -1,9 +1,13 @@
 package com.example.com.venom.entity;
 
 import com.example.com.venom.enums.order.MenuItemType;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;  // ← Импорт для jsonb (лучше для Postgres)
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Type;  // ← Импорт для @Type
+
+import java.util.Map;  // ← Если используешь Map
 
 @Entity
 @Table(name = "order_items")
@@ -14,9 +18,8 @@ public class OrderItemEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "order_id", nullable = false)
-    private OrderEntity order;
+    @Column(name = "order_id", nullable = false)  // Просто колонка с ID заказа, без @ManyToOne
+    private Long orderId;
 
     @Column(name = "menu_item_id", nullable = false)
     private Long menuItemId; // ID из меню
@@ -37,6 +40,7 @@ public class OrderItemEntity {
     @Column(name = "total_price", nullable = false)
     private double totalPrice; // pricePerUnit * quantity
 
-    @Column(columnDefinition = "JSON")
-    private String options; // JSON с выбранными опциями (для напитков)
+    @Type(JsonBinaryType.class)  // ← Вот это вместо старого, для jsonb
+    @Column(columnDefinition = "jsonb")  // ← jsonb лучше, чем json (быстрее индексация)
+    private Map<String, String> options;  // ← Измени на Map — Hibernate сам превратит в JSON
 }

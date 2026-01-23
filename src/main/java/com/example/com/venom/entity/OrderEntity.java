@@ -21,21 +21,19 @@ public class OrderEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "establishment_id", nullable = false)
-    private EstablishmentEntity establishment;
+    // Просто ID без связей
+    @Column(name = "establishment_id", nullable = false)
+    private Long establishmentId;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "delivery_address_id")
-    private DeliveryAddressEntity deliveryAddress;
+    @Column(name = "delivery_address_id")
+    private Long deliveryAddressId;
 
     @Column(name = "is_contactless")
     private boolean isContactless = false;
@@ -45,7 +43,7 @@ public class OrderEntity {
     private PaymentMethod paymentMethod;
 
     @Column(name = "delivery_time", nullable = false)
-    private LocalDateTime deliveryTime; // Время, к которому нужно доставить
+    private LocalDateTime deliveryTime;
 
     @Column(columnDefinition = "TEXT")
     private String comments;
@@ -64,6 +62,8 @@ public class OrderEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "order_id")  // Указываем колонку в order_items, где хранится FK
     private List<OrderItemEntity> items = new ArrayList<>();
+
 }

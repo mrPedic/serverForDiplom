@@ -19,23 +19,7 @@ public class OrderPriceCalculator {
         this.menuService = menuService;
     }
 
-    public double calculateTotalPrice(List<CreateOrderItemDto> items, EstablishmentEntity establishment) {
-        double total = 0.0;
-
-        for (CreateOrderItemDto item : items) {
-            double itemPrice = calculateItemPrice(item, establishment);
-            total += itemPrice * item.getQuantity();
-        }
-
-        // Добавляем стоимость доставки (если нужно)
-        if (total < 1000) { // Бесплатная доставка от 1000 рублей
-            total += 200; // Стоимость доставки
-        }
-
-        return total;
-    }
-
-    private double calculateItemPrice(CreateOrderItemDto item, EstablishmentEntity establishment) {
+    public double calculateItemPrice(CreateOrderItemDto item, EstablishmentEntity establishment) {
         Object menuItem = menuService.getMenuItemById(
                 establishment.getId(),
                 item.getMenuItemId(),

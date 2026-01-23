@@ -1,5 +1,6 @@
 package com.example.com.venom.websocket;
 
+import com.example.com.venom.service.BookingService;
 import com.example.com.venom.service.SubscriptionService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CustomNotificationHandler extends TextWebSocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomNotificationHandler.class);
+
 
     private final SubscriptionService subscriptionService;
     private final ObjectMapper objectMapper;
@@ -249,6 +251,16 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+
+        if (status.getCode() == 1006) {
+            // Это нормальное закрытие соединения, не логируем как ошибку
+            logger.info("WebSocket connection closed normally: sessionId={}, userId={}",
+                    session.getId(), session.getUri());
+        } else {
+            logger.warn("WebSocket connection closed: sessionId={}, status={}, reason={}",
+                    session.getId(), status.getCode(), status.getReason());
+        }
+
         sessions.remove(session.getId());
 
         executorService.submit(() -> {

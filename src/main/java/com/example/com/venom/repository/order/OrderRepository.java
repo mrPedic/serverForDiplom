@@ -27,7 +27,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             OrderStatus status
     );
 
-    @Query("SELECT o FROM OrderEntity o WHERE o.establishment.id = :establishmentId " +
+    @Query("SELECT o FROM OrderEntity o WHERE o.establishmentId = :establishmentId " +
             "AND o.deliveryTime BETWEEN :startDate AND :endDate " +
             "ORDER BY o.deliveryTime ASC")
     List<OrderEntity> findOrdersByEstablishmentAndDateRange(
@@ -36,7 +36,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             @Param("endDate") LocalDateTime endDate
     );
 
-    @Query("SELECT COUNT(o) FROM OrderEntity o WHERE o.establishment.id = :establishmentId " +
+    @Query("SELECT COUNT(o) FROM OrderEntity o WHERE o.establishmentId = :establishmentId " +
             "AND o.deliveryTime BETWEEN :startDate AND :endDate")
     long countOrdersInTimeSlot(
             @Param("establishmentId") Long establishmentId,

@@ -2,7 +2,10 @@ package com.example.com.venom.config;
 
 import java.util.Optional;
 
+import jakarta.transaction.Transactional;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.crypto.password.PasswordEncoder;  // Добавь импорт, если Spring Security
 import org.springframework.stereotype.Component;
 
 import com.example.com.venom.entity.UserEntity;
@@ -10,42 +13,41 @@ import com.example.com.venom.entity.UserEntity.Role;
 import com.example.com.venom.repository.UserRepository;
 
 @Component
+@Order(1)
 public class InitialAdminLoader implements CommandLineRunner {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;  // Внедри, если нужно кодирование
 
-    public InitialAdminLoader(UserRepository userRepository) {
+    public InitialAdminLoader(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
+    @Transactional
     public void run(String... args) throws Exception {
         // Создаем первого администратора
-        createUserIfNotExists("mrPedick", "mrPedick", "5422f8aa", Role.AdminOfApp, 1L);
+        createUserIfNotExists("mrPedick", "mrPedick", "5422f8aa", Role.AdminOfApp);
 
         // Создаем второго администратора для отзывов
-        createUserIfNotExists("Reviewer Admin", "reviewer2", "reviewerPass", Role.AdminOfApp, 2L);
+        createUserIfNotExists("Reviewer Admin", "reviewer2", "reviewerPass", Role.AdminOfApp);
 
         System.out.println("✅ Проверка администраторов завершена");
     }
 
-    private void createUserIfNotExists(String name, String login, String password, Role role, Long desiredId) {
+    @Transactional
+    private void createUserIfNotExists(String name, String login, String rawPassword, Role role) {
         Optional<UserEntity> existingUser = userRepository.findByLogin(login);
 
         if (existingUser.isEmpty()) {
-            UserEntity user = new UserEntity(name, login, password, role);
+            String encodedPassword = passwordEncoder.encode(rawPassword);  // Кодируем пароль
+            UserEntity user = new UserEntity(name, login, encodedPassword, role);
 
-            // Для тестовых данных можем задать ID напрямую
-            // ВНИМАНИЕ: Это работает только если в сущности UserEntity есть возможность задать ID
-            try {
-                // Если в UserEntity есть setId метод
-                user.setId(desiredId);
-                System.out.println(">>> Создан администратор: " + login + " с ID: " + desiredId);
-            } catch (Exception e) {
-                System.out.println(">>> Создан администратор: " + login + " (ID сгенерируется автоматически)");
-            }
+            // НЕ устанавливаем ID вручную — пусть БД генерирует
+            user = userRepository.save(user);  // Save и получаем entity с ID
 
-            userRepository.save(user);
+            System.out.println(">>> Создан администратор: " + login + " с ID: " + user.getId());
         } else {
             System.out.println("ℹ>>> Администратор " + login + " уже существует");
         }

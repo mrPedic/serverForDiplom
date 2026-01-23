@@ -1,6 +1,5 @@
 package com.example.com.venom.service.order;
 
-import com.example.com.venom.dto.order.CreateDeliveryAddressRequest;
 import com.example.com.venom.dto.order.DeliveryAddressDto;
 import com.example.com.venom.entity.DeliveryAddressEntity;
 import com.example.com.venom.entity.UserEntity;
@@ -9,6 +8,7 @@ import com.example.com.venom.repository.order.DeliveryAddressRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,7 +27,8 @@ public class DeliveryAddressService {
                 .collect(Collectors.toList());
     }
 
-    public DeliveryAddressDto createAddress(Long userId, CreateDeliveryAddressRequest request) {
+    @Transactional
+    public DeliveryAddressDto createAddress(Long userId, DeliveryAddressDto request) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
 
@@ -51,7 +52,8 @@ public class DeliveryAddressService {
         return convertToDto(saved);
     }
 
-    public DeliveryAddressDto updateAddress(Long userId, Long addressId, CreateDeliveryAddressRequest request) {
+    @Transactional
+    public DeliveryAddressDto updateAddress(Long userId, Long addressId, DeliveryAddressDto request) {
         DeliveryAddressEntity address = deliveryAddressRepository.findByIdAndUserId(addressId, userId)
                 .orElseThrow(() -> new EntityNotFoundException("Адрес не найден"));
 
@@ -73,6 +75,7 @@ public class DeliveryAddressService {
         return convertToDto(updated);
     }
 
+    @Transactional
     public void deleteAddress(Long userId, Long addressId) {
         DeliveryAddressEntity address = deliveryAddressRepository.findByIdAndUserId(addressId, userId)
                 .orElseThrow(() -> new EntityNotFoundException("Адрес не найден"));
@@ -91,6 +94,7 @@ public class DeliveryAddressService {
         }
     }
 
+    @Transactional
     public void setDefaultAddress(Long userId, Long addressId) {
         DeliveryAddressEntity address = deliveryAddressRepository.findByIdAndUserId(addressId, userId)
                 .orElseThrow(() -> new EntityNotFoundException("Адрес не найден"));
@@ -101,7 +105,6 @@ public class DeliveryAddressService {
     }
 
     private DeliveryAddressDto convertToDto(DeliveryAddressEntity entity) {
-        // Реализация конвертации
         return new DeliveryAddressDto(
                 entity.getId(),
                 entity.getUser().getId(),

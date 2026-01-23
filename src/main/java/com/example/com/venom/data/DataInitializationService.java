@@ -13,6 +13,7 @@ import com.example.com.venom.repository.TableRepository;
 import com.example.com.venom.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
+@Order(2)
 @RequiredArgsConstructor
 public class DataInitializationService {
 
