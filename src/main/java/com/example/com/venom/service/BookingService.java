@@ -77,27 +77,27 @@ public class BookingService {
 
         BookingEntity savedBooking = bookingRepository.save(booking);
 
-        // 🔥 ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ ЧЕРЕЗ WEBSOCKET
+        // ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ ЧЕРЕЗ WEBSOCKET
         sendBookingNotification(savedBooking, table);
 
         return savedBooking;
     }
 
-    // 🔥 НОВЫЙ МЕТОД: Отправка уведомления о новой брони
+    // Отправка уведомления о новой брони
     private void sendBookingNotification(BookingEntity booking, TableEntity table) {
         try {
             EstablishmentEntity establishment = establishmentRepository.findById(booking.getEstablishmentId())
                     .orElse(null);
 
-            log.info("🔍 Finding owner for establishment: {}", booking.getEstablishmentId());
+            log.info("Finding owner for establishment: {}", booking.getEstablishmentId());
 
             Long ownerId = null;
             if (establishment != null) {
                 ownerId = establishment.getCreatedUserId();
-                log.info("🔍 Found owner ID: {} for establishment: {}",
+                log.info("Found owner ID: {} for establishment: {}",
                         ownerId, establishment.getName());
             } else {
-                log.warn("⚠️ Establishment not found: {}", booking.getEstablishmentId());
+                log.warn("⚠Establishment not found: {}", booking.getEstablishmentId());
             }
 
             UserEntity user = userRepository.findById(booking.getUserId())
@@ -138,7 +138,7 @@ public class BookingService {
 
             notification.set("data", data);
 
-            // 🔥 ОТПРАВЛЯЕМ НА КАНАЛ ВЛАДЕЛЬЦА (если нашли)
+            // ОТПРАВЛЯЕМ НА КАНАЛ ВЛАДЕЛЬЦА (если нашли)
             if (ownerId != null) {
                 String channel = "user_" + ownerId;
                 String notificationJson = objectMapper.writeValueAsString(notification);
@@ -146,14 +146,14 @@ public class BookingService {
                 // Используем сервис для отправки уведомлений через WebSocket
                 int sentCount = webSocketNotificationService.broadcastToChannel(channel, notificationJson);
 
-                log.info("✅ Отправлено WebSocket уведомление о новой брони ID {} на канал владельца {} (user_{}), отправлено: {}",
+                log.info("Отправлено WebSocket уведомление о новой брони ID {} на канал владельца {} (user_{}), отправлено: {}",
                         booking.getId(), ownerName, ownerId, sentCount);
             } else {
-                log.warn("⚠️ Не найден владелец заведения {} для отправки уведомления", booking.getEstablishmentId());
+                log.warn("⚠Не найден владелец заведения {} для отправки уведомления", booking.getEstablishmentId());
             }
 
         } catch (Exception e) {
-            log.error("❌ Ошибка отправки WebSocket уведомления: {}", e.getMessage(), e);
+            log.error("Ошибка отправки WebSocket уведомления: {}", e.getMessage(), e);
         }
     }
 
@@ -356,11 +356,11 @@ public class BookingService {
 
             int sentCount = webSocketNotificationService.broadcastToChannel(channel, notificationJson);
 
-            log.info("✅ Отправлено уведомление о смене статуса брони ID {} пользователю {} (статус: {}), отправлено: {}",
+            log.info("Отправлено уведомление о смене статуса брони ID {} пользователю {} (статус: {}), отправлено: {}",
                     booking.getId(), booking.getUserId(), newStatus, sentCount);
 
         } catch (Exception e) {
-            log.error("❌ Ошибка отправки уведомления о статусе: {}", e.getMessage(), e);
+            log.error("Ошибка отправки уведомления о статусе: {}", e.getMessage(), e);
         }
     }
 }

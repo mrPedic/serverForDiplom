@@ -3,6 +3,7 @@ package com.example.com.venom.controller;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.com.venom.dto.establishment.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -16,11 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.com.venom.dto.establishment.EstablishmentCreationRequest;
-import com.example.com.venom.dto.establishment.EstablishmentDisplayDto;
-import com.example.com.venom.dto.establishment.EstablishmentMarkerDto;
-import com.example.com.venom.dto.establishment.EstablishmentSearchResultDto;
-import com.example.com.venom.dto.establishment.EstablishmentUpdateRequest;
 import com.example.com.venom.dto.forEstablishmentDetailScreen.DescriptionDTO;
 import com.example.com.venom.dto.forEstablishmentDetailScreen.MapDTO;
 import com.example.com.venom.entity.EstablishmentEntity;
@@ -208,5 +204,32 @@ public class EstablishmentController {
             log.warn("--- [CONTROLLER] GET /{id}/map: Not found for id={}", id);
             return ResponseEntity.notFound().build();
         }
+    }
+
+    // ========================== Получение заведений с счетчиками ==========================
+    @GetMapping("/user/{userId}/with-counts")
+    public ResponseEntity<List<EstablishmentWithCountsDto>> getEstablishmentsWithCountsByUserId(@PathVariable Long userId) {
+        log.info("--- [CONTROLLER] GET /user/{}/with-counts: Received userId={}", userId, userId);
+        List<EstablishmentWithCountsDto> dtoList = establishmentService.getEstablishmentsWithCountsByUserId(userId);
+        log.info("--- [CONTROLLER] GET /user/{}/with-counts: Returning {} establishments", userId, dtoList.size());
+        return ResponseEntity.ok(dtoList);
+    }
+
+    // ========================== Получение количества ожидающих заказов ==========================
+    @GetMapping("/{id}/orders/pending-count")
+    public ResponseEntity<Integer> getPendingOrderCount(@PathVariable Long id) {
+        log.info("--- [CONTROLLER] GET /{}/orders/pending-count: Received id={}", id, id);
+        int count = establishmentService.getPendingOrderCount(id);
+        log.info("--- [CONTROLLER] GET /{}/orders/pending-count: Returning count={}", id, count);
+        return ResponseEntity.ok(count);
+    }
+
+    // ========================== Получение количества ожидающих бронирований ==========================
+    @GetMapping("/{id}/bookings/pending-count")
+    public ResponseEntity<Integer> getPendingBookingCount(@PathVariable Long id) {
+        log.info("--- [CONTROLLER] GET /{}/bookings/pending-count: Received id={}", id, id);
+        int count = establishmentService.getPendingBookingCount(id);
+        log.info("--- [CONTROLLER] GET /{}/bookings/pending-count: Returning count={}", id, count);
+        return ResponseEntity.ok(count);
     }
 }

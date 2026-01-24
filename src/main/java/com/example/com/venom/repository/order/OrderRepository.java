@@ -43,4 +43,6 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
+
+    int countByEstablishmentIdAndStatus(Long establishmentId, OrderStatus status);
 }

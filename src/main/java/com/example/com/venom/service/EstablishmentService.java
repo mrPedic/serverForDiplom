@@ -1,16 +1,16 @@
 package com.example.com.venom.service;
 
-import com.example.com.venom.dto.establishment.EstablishmentCreationRequest;
-import com.example.com.venom.dto.establishment.EstablishmentDisplayDto;
-import com.example.com.venom.dto.establishment.EstablishmentMarkerDto;
-import com.example.com.venom.dto.establishment.EstablishmentSearchResultDto;
-import com.example.com.venom.dto.establishment.EstablishmentUpdateRequest;
+import com.example.com.venom.dto.establishment.*;
 import com.example.com.venom.dto.forEstablishmentDetailScreen.DescriptionDTO;
 import com.example.com.venom.dto.forEstablishmentDetailScreen.MapDTO;
 import com.example.com.venom.entity.EstablishmentEntity;
+import com.example.com.venom.enums.BookingStatus;
 import com.example.com.venom.enums.EstablishmentStatus;
 import com.example.com.venom.enums.EstablishmentType;
+import com.example.com.venom.enums.order.OrderStatus;
+import com.example.com.venom.repository.BookingRepository;
 import com.example.com.venom.repository.EstablishmentRepository;
+import com.example.com.venom.repository.order.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +27,8 @@ public class EstablishmentService {
     private static final Logger log = LoggerFactory.getLogger(EstablishmentService.class);
 
     private final EstablishmentRepository repository;
+    private final OrderRepository orderRepository;
+    private final BookingRepository bookingRepository;
 
     public List<EstablishmentDisplayDto> findByCreatedUserId(Long userId) {
         log.info("--- [SERVICE] findByCreatedUserId: Received userId={}", userId);
@@ -192,5 +194,43 @@ public class EstablishmentService {
         );
         log.info("--- [SERVICE] getMapData: Returning DTO for id={}", id);
         return dto;
+    }
+
+    /**
+     * Получить заведения пользователя с количеством ожидающих заказов и бронирований
+     */
+    public List<EstablishmentWithCountsDto> getEstablishmentsWithCountsByUserId(Long userId) {
+        log.info("--- [SERVICE] getEstablishmentsWithCountsByUserId: Received userId={}", userId);
+
+        List<EstablishmentEntity> entities = repository.findByCreatedUserId(userId);
+        List<EstablishmentWithCountsDto> dtos = entities.stream()
+                .map(entity -> {
+                    // Подсчитываем количество pending заказов и бронирований
+                    int pendingOrdersCount = orderRepository.countByEstablishmentIdAndStatus(
+                            entity.getId(), OrderStatus.PENDING);
+                    int pendingBookingsCount = bookingRepository.countByEstablishmentIdAndStatus(
+                            entity.getId(), BookingStatus.PENDING);
+
+                    return EstablishmentWithCountsDto.fromEntity(
+                            entity, pendingOrdersCount, pendingBookingsCount);
+                })
+                .collect(Collectors.toList());
+
+        log.info("--- [SERVICE] getEstablishmentsWithCountsByUserId: Found {} establishments with counts", dtos.size());
+        return dtos;
+    }
+
+    /**
+     * Получить количество pending заказов для заведения
+     */
+    public int getPendingOrderCount(Long establishmentId) {
+        return orderRepository.countByEstablishmentIdAndStatus(establishmentId, OrderStatus.PENDING);
+    }
+
+    /**
+     * Получить количество pending бронирований для заведения
+     */
+    public int getPendingBookingCount(Long establishmentId) {
+        return bookingRepository.countByEstablishmentIdAndStatus(establishmentId, BookingStatus.PENDING);
     }
 }

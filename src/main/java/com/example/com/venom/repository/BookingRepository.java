@@ -38,5 +38,5 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
             @Param("status") BookingStatus status
     );
 
-
+    int countByEstablishmentIdAndStatus(Long establishmentId, BookingStatus status);
 }

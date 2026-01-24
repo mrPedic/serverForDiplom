@@ -18,9 +18,23 @@ public class WebSocketNotificationService {
     }
 
     public void sendOrderNotification(Long userId, OrderNotificationDto notification) {
-        // Конвертируем в JSON
-        String jsonMessage = convertToJson(notification);
-        notificationHandler.sendToUser(userId.toString(), jsonMessage);
+        try {
+            // Конвертируем в JSON
+            String message = String.format(
+                    "{\"type\": \"ORDER_NOTIFICATION\", \"data\": %s}",
+                    convertToJson(notification)
+            );
+
+            // Отправляем через WebSocket
+            notificationHandler.sendToUser(userId.toString(), message);
+
+            // Также отправляем на канал заведения для владельца
+            String establishmentChannel = "establishment_" + notification.getEstablishmentId();
+            notificationHandler.broadcastToChannel(establishmentChannel, message);
+
+        } catch (Exception e) {
+            System.err.println("Ошибка отправки WebSocket уведомления: " + e.getMessage());
+        }
     }
 
     public void sendOrderStatusUpdate(Long orderId, OrderDto order) {

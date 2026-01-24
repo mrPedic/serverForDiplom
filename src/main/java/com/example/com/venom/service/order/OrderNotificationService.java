@@ -1,10 +1,12 @@
 package com.example.com.venom.service.order;
 
 import com.example.com.venom.dto.order.OrderNotificationDto;
+import com.example.com.venom.entity.EstablishmentEntity;
 import com.example.com.venom.entity.OrderEntity;
 import com.example.com.venom.entity.OrderNotificationEntity;
 import com.example.com.venom.entity.UserEntity;
 import com.example.com.venom.enums.order.OrderNotificationType;
+import com.example.com.venom.repository.EstablishmentRepository;
 import com.example.com.venom.repository.UserRepository;
 import com.example.com.venom.repository.order.OrderNotificationRepository;
 import com.example.com.venom.service.WebSocketNotificationService;
@@ -24,6 +26,8 @@ public class OrderNotificationService {
     private final OrderNotificationRepository notificationRepository;
     private final WebSocketNotificationService webSocketService;
     private final UserRepository userRepository; // Добавлено для получения имени пользователя
+    private final EstablishmentRepository establishmentRepository;
+
 
     @Transactional
     public void sendOrderCreatedNotification(OrderEntity order) {
@@ -93,5 +97,84 @@ public class OrderNotificationService {
                 .isRead(entity.isRead())
                 .createdAt(entity.getCreatedAt())
                 .build();
+    }
+
+    // OrderNotificationService.java - ДОБАВЬ в конец класса
+
+    @Transactional
+    public void sendOrderStatusChangedNotification(OrderEntity order) {
+        // Достаем имя пользователя
+        String userName = userRepository.findById(order.getUserId())
+                .map(UserEntity::getName)
+                .orElse("Клиент #" + order.getUserId());
+
+        OrderNotificationEntity notification = new OrderNotificationEntity();
+        notification.setOrderId(order.getId());
+        notification.setUserId(order.getUserId());
+        notification.setEstablishmentId(order.getEstablishmentId());
+        notification.setType(OrderNotificationType.ORDER_STATUS_CHANGED);
+        notification.setMessage(String.format(
+                "Статус заказа #%d изменен на: %s",
+                order.getId(), order.getStatus().toString()
+        ));
+
+        notificationRepository.save(notification);
+
+        // Отправляем через WebSocket уведомление пользователю
+        webSocketService.sendOrderNotification(order.getUserId(), convertToDto(notification));
+
+        // Также отправляем уведомление владельцу заведения
+        sendEstablishmentOwnerNotification(order, userName);
+    }
+
+    private void sendEstablishmentOwnerNotification(OrderEntity order, String userName) {
+        try {
+            // Получаем владельца заведения
+            EstablishmentEntity establishment = establishmentRepository.findById(order.getEstablishmentId())
+                    .orElseThrow(() -> new EntityNotFoundException("Заведение не найдено"));
+
+            Long ownerId = establishment.getCreatedUserId();
+
+            if (ownerId != null) {
+                // Создаем уведомление для владельца
+                OrderNotificationEntity ownerNotification = new OrderNotificationEntity();
+                ownerNotification.setOrderId(order.getId());
+                ownerNotification.setUserId(ownerId); // Владелец заведения
+                ownerNotification.setEstablishmentId(order.getEstablishmentId());
+                ownerNotification.setType(OrderNotificationType.ORDER_STATUS_CHANGED);
+                ownerNotification.setMessage(String.format(
+                        "Заказ #%d от %s: статус изменен на %s",
+                        order.getId(), userName, order.getStatus().toString()
+                ));
+
+                notificationRepository.save(ownerNotification);
+
+                // Отправляем через WebSocket владельцу
+                webSocketService.sendOrderNotification(ownerId, convertToDto(ownerNotification));
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка отправки уведомления владельцу: " + e.getMessage());
+        }
+    }
+
+    // Метод для отправки уведомления об отклонении заказа
+    @Transactional
+    public void sendOrderRejectedNotification(OrderEntity order, String rejectionReason) {
+        String userName = userRepository.findById(order.getUserId())
+                .map(UserEntity::getName)
+                .orElse("Клиент #" + order.getUserId());
+
+        OrderNotificationEntity notification = new OrderNotificationEntity();
+        notification.setOrderId(order.getId());
+        notification.setUserId(order.getUserId());
+        notification.setEstablishmentId(order.getEstablishmentId());
+        notification.setType(OrderNotificationType.ORDER_REJECTED);
+        notification.setMessage(String.format(
+                "Заказ #%d отклонен. Причина: %s",
+                order.getId(), rejectionReason != null ? rejectionReason : "Не указана"
+        ));
+
+        notificationRepository.save(notification);
+        webSocketService.sendOrderNotification(order.getUserId(), convertToDto(notification));
     }
 }

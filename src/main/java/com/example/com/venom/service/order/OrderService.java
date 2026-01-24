@@ -232,25 +232,71 @@ public class OrderService {
         }
     }
 
-    private OrderDto convertToDto(OrderEntity entity) {
-        // Инициализируем коллекцию items (на всякий случай, хотя в unidirectional OneToMany она обычно загружается)
-        Hibernate.initialize(entity.getItems());
+    private MenuItemDto getMenuItemInfo(Long menuItemId, MenuItemType type, Long establishmentId) {
+        Object menuItem = menuService.getMenuItemById(establishmentId, menuItemId, type);
+        if (menuItem instanceof MenuItemDto) {
+            return (MenuItemDto) menuItem;
+        }
+        throw new IllegalArgumentException("Invalid menu item type or not found");
+    }
 
-        List<OrderItemDto> itemsDto = entity.getItems().stream()
-                .map(item -> OrderItemDto.builder()
-                        .id(item.getId())
-                        .orderId(item.getOrderId())
-                        .menuItemId(item.getMenuItemId())
-                        .menuItemName(item.getMenuItemName())
-                        .menuItemType(item.getMenuItemType())
-                        .quantity(item.getQuantity())
-                        .pricePerUnit(item.getPricePerUnit())
-                        .totalPrice(item.getTotalPrice())
-                        .options(item.getOptions())  // Прямо Map<String, String> → Map (без сериализации в String)
-                        .build())
+    private double calculateItemPrice(CreateOrderItemDto itemDto, EstablishmentEntity establishment) {
+        return priceCalculator.calculateItemPrice(itemDto, establishment);
+    }
+
+    // OrderService.java - ДОБАВЬ ЭТО В КОНЕЦ КЛАССА
+
+    // Получение заказов по заведению (без фильтра)
+    public List<OrderDto> getOrdersByEstablishment(Long establishmentId) {
+        List<OrderEntity> orders = orderRepository.findByEstablishmentIdOrderByCreatedAtDesc(establishmentId);
+        return orders.stream()
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
+    }
 
-        return OrderDto.builder()
+    // Получение заказов по заведению с фильтром по статусу
+    public List<OrderDto> getOrdersByEstablishmentAndStatus(Long establishmentId, OrderStatus status) {
+        List<OrderEntity> orders = orderRepository.findByEstablishmentIdAndStatusOrderByCreatedAtDesc(establishmentId, status);
+        return orders.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    // Обновление статуса заказа
+    @Transactional
+    public OrderDto updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Заказ не найден"));
+
+        // Проверяем, что статус не null
+        if (request.getStatus() == null) {
+            throw new IllegalArgumentException("Статус не может быть пустым");
+        }
+
+        // Обновляем статус
+        order.setStatus(request.getStatus());
+
+        // Если есть причина отклонения, устанавливаем ее
+        if (request.getRejectionReason() != null && !request.getRejectionReason().isEmpty()) {
+            order.setRejectionReason(request.getRejectionReason());
+        }
+
+        OrderEntity updatedOrder = orderRepository.save(order);
+
+        // Отправляем уведомление об изменении статуса
+        try {
+            notificationService.sendOrderStatusChangedNotification(updatedOrder);
+        } catch (Exception e) {
+            // Логируем ошибку, но не прерываем выполнение
+            System.err.println("Ошибка отправки уведомления: " + e.getMessage());
+        }
+
+        return convertToDto(updatedOrder);
+    }
+
+    // Добавь этот метод для установки имени пользователя в DTO
+    private OrderDto convertToDto(OrderEntity entity) {
+        OrderDto dto = OrderDto.builder()
                 .id(entity.getId())
                 .userId(entity.getUserId())
                 .establishmentId(entity.getEstablishmentId())
@@ -264,19 +310,50 @@ public class OrderService {
                 .rejectionReason(entity.getRejectionReason())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
-                .items(itemsDto)
                 .build();
-    }
 
-    private MenuItemDto getMenuItemInfo(Long menuItemId, MenuItemType type, Long establishmentId) {
-        Object menuItem = menuService.getMenuItemById(establishmentId, menuItemId, type);
-        if (menuItem instanceof MenuItemDto) {
-            return (MenuItemDto) menuItem;
+        // Получаем имя пользователя
+        try {
+            UserEntity user = userRepository.findById(entity.getUserId()).orElse(null);
+            if (user != null) {
+                dto.setUserName(user.getName() != null ? user.getName() : "Пользователь #" + user.getId());
+            }
+        } catch (Exception e) {
+            dto.setUserName("Неизвестно");
         }
-        throw new IllegalArgumentException("Invalid menu item type or not found");
-    }
 
-    private double calculateItemPrice(CreateOrderItemDto itemDto, EstablishmentEntity establishment) {
-        return priceCalculator.calculateItemPrice(itemDto, establishment);
+        // Получаем название заведения
+        try {
+            EstablishmentEntity establishment = establishmentRepository.findById(entity.getEstablishmentId()).orElse(null);
+            if (establishment != null) {
+                dto.setEstablishmentName(establishment.getName());
+            }
+        } catch (Exception e) {
+            dto.setEstablishmentName("Заведение #" + entity.getEstablishmentId());
+        }
+
+        // Получаем адрес доставки, если есть
+        if (entity.getDeliveryAddressId() != null) {
+            // TODO: Реализовать получение адреса доставки, если нужно
+        }
+
+        // Получаем позиции заказа
+        List<OrderItemDto> itemsDto = entity.getItems().stream()
+                .map(item -> OrderItemDto.builder()
+                        .id(item.getId())
+                        .orderId(item.getOrderId())
+                        .menuItemId(item.getMenuItemId())
+                        .menuItemName(item.getMenuItemName())
+                        .menuItemType(item.getMenuItemType())
+                        .quantity(item.getQuantity())
+                        .pricePerUnit(item.getPricePerUnit())
+                        .totalPrice(item.getTotalPrice())
+                        .options(item.getOptions())
+                        .build())
+                .collect(Collectors.toList());
+
+        dto.setItems(itemsDto);
+
+        return dto;
     }
 }

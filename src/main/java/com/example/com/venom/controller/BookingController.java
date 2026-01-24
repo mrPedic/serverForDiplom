@@ -7,6 +7,8 @@ import java.util.Map;
 
 import com.example.com.venom.dto.booking.BookingDisplayDto;
 import com.example.com.venom.dto.booking.OwnerBookingDisplayDto;
+import com.example.com.venom.enums.BookingStatus;
+import com.example.com.venom.repository.BookingRepository;
 import com.example.com.venom.service.SubscriptionServiceInterface;
 import com.example.com.venom.service.WebSocketNotificationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +37,7 @@ public class BookingController {
     private final ObjectMapper objectMapper;
     private final SubscriptionServiceInterface subscriptionService;
     private final WebSocketNotificationService webSocketNotificationServiceKt;
+    private final BookingRepository bookingRepository;
 
     @PostMapping
     public ResponseEntity<BookingEntity> createBooking(@RequestBody BookingCreationDto dto) {
@@ -197,5 +200,16 @@ public class BookingController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "error", e.getMessage()));
         }
+    }
+
+    // ========================== Получение количества pending бронирований по заведению ==========================
+    @GetMapping("/establishment/{establishmentId}/count-pending")
+    public ResponseEntity<Integer> getPendingBookingCount(@PathVariable Long establishmentId) {
+        log.info("--- [CONTROLLER] GET /bookings/establishment/{}/count-pending: Received establishmentId={}",
+                establishmentId, establishmentId);
+        int count = bookingRepository.countByEstablishmentIdAndStatus(establishmentId, BookingStatus.PENDING);
+        log.info("--- [CONTROLLER] GET /bookings/establishment/{}/count-pending: Returning count={}",
+                establishmentId, count);
+        return ResponseEntity.ok(count);
     }
 }
