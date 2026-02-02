@@ -24,6 +24,45 @@ public class WebSocketNotificationService {
         return notificationHandler.broadcastToChannel(channel, message);
     }
 
+    // Внутри WebSocketNotificationService.java
+
+    public void sendGlobalNotification(com.example.com.venom.dto.GlobalNotificationDto dto) {
+        String jsonMessage = String.format(
+                "{\"type\": \"GLOBAL_NOTIFICATION\", \"title\": \"%s\", \"message\": \"%s\", \"timestamp\": \"%s\"}",
+                dto.getTitle(),
+                dto.getMessage(),
+                java.time.LocalDateTime.now()
+        );
+
+        String target = dto.getTarget();
+        System.out.println("🔔 SERVER RECEIVED NOTIFICATION REQUEST");
+        System.out.println("TARGET: " + target);
+
+        if (target == null) return;
+
+        if ("all_users".equals(target)) {
+            System.out.println("📤 Broadcasting to 'global' channel...");
+            notificationHandler.broadcastToChannel("global", jsonMessage);
+        }
+        else if (target.startsWith("specific_user:")) {
+            String userId = target.split(":")[1];
+            notificationHandler.sendToUser(userId, jsonMessage);
+        }
+        // --- ДОБАВЛЕНО ---
+        else if ("all_establishments".equals(target)) {
+            System.out.println("📤 Broadcasting to all establishments...");
+            notificationHandler.broadcastToChannel("all_establishments", jsonMessage);
+        }
+        else if (target.startsWith("specific_establishment:")) {
+            String estId = target.split(":")[1];
+            System.out.println("📤 Sending to establishment channel: establishment_" + estId);
+            notificationHandler.broadcastToChannel("establishment_" + estId, jsonMessage);
+        }
+        else {
+            System.err.println("⚠️ Unknown target format: " + target);
+        }
+    }
+
     /**
      * Отправка личного уведомления пользователю по его UserID.
      */

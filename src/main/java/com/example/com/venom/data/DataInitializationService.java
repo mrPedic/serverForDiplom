@@ -913,7 +913,9 @@ public class DataInitializationService {
 
             // Статус и рейтинг
             establishment.setStatus(EstablishmentStatus.ACTIVE);
-            establishment.setRating(3.5 + random.nextDouble() * 1.5); // Рейтинг от 3.5 до 5.0
+            // Новый код (генерирует 3.5, 4.0, 4.5 или 5.0)
+            double rawRating = 3.5 + random.nextDouble() * 1.5;
+            establishment.setRating(Math.round(rawRating * 2) / 2.0); // Рейтинг от 3.5 до 5.0
 
             // ID создателя (заглушка)
             establishment.setCreatedUserId(1L);
@@ -1179,8 +1181,10 @@ public class DataInitializationService {
                 review.setEstablishmentId(establishment.getId());
                 review.setCreatedUserId(reviewerUserId);
 
-                // Рейтинг 3.5-5.0, больше хороших оценок
-                review.setRating(3.5f + random.nextFloat() * 1.5f);
+                // Генерация рейтинга, кратного 0.5 (от 3.5 до 5.0)
+                // Создаем массив возможных значений: 3.5, 4.0, 4.5, 5.0
+                float[] possibleRatings = {2f, 2.5f, 3f , 3.5f, 4.0f, 4.5f, 5.0f};
+                review.setRating(possibleRatings[random.nextInt(possibleRatings.length)]);
 
                 // Берем отзыв из списка (циклически)
                 review.setReviewText(shuffledReviews.get(i % shuffledReviews.size()));
@@ -1247,10 +1251,10 @@ public class DataInitializationService {
                 for (ReviewEntity review : reviews) {
                     sum += review.getRating();
                 }
-                double averageRating = sum / reviews.size();
-
-                // Округляем до 1 знака после запятой
-                establishment.setRating(round(averageRating, 1));
+                // Новый код
+                double rawAverage = sum / reviews.size();
+                double finalRating = Math.round(rawAverage * 2) / 2.0;
+                establishment.setRating(finalRating);
                 establishmentRepository.save(establishment);
                 updatedCount++;
             }

@@ -269,6 +269,16 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
             logger.info("User {} disconnected with status: {} (code: {}, reason: {})",
                     userId, status, status.getCode(), status.getReason());
         });
+
+        if (!executorService.isShutdown()) {
+            executorService.submit(() -> {
+                String userId = subscriptionService.getUserBySession(session.getId());
+                subscriptionService.unsubscribeAll(session.getId());
+            });
+        } else {
+            // При выключении сервера лучше сделать это в текущем потоке
+            subscriptionService.unsubscribeAll(session.getId());
+        }
     }
 
     private boolean safeSend(WebSocketSession session, String message) {
@@ -299,9 +309,11 @@ public class CustomNotificationHandler extends TextWebSocketHandler {
     }
 
     private void sendError(WebSocketSession session, String message, String requestId) {
-        executorService.submit(() -> safeSend(session, String.format(
-                "{\"type\": \"error\", \"message\": \"%s\", \"requestId\": \"%s\", \"timestamp\": \"%d\"}",
-                message, requestId, Instant.now().getEpochSecond())));
+        if (!executorService.isShutdown()) {
+            executorService.submit(() -> safeSend(session, String.format(
+                    "{\"type\": \"error\", \"message\": \"%s\", \"requestId\": \"%s\", \"timestamp\": \"%d\"}",
+                    message, requestId, Instant.now().getEpochSecond())));
+        }
     }
 
     public int sendToUser(String userId, String message) {
